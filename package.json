@@ -2,6 +2,9 @@
   "devDependencies": {
     "netlify-cli": "^23.12.2"
   },
+  "scripts": {
+    "build": "echo 'No build step required'"
+  },
   "dependencies": {
     "node-fetch": "^2.7.0"
   }

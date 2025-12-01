@@ -835,6 +835,74 @@
 
         // --- DATA: Layer Information & Metrics ---
         const LAYER_DATA = {
+            "Source of Energy": {
+                health: "Optimal",
+                healthClass: "health-good",
+                metrics: [
+                    { name: "External Alignment", target: 90, current: 85, status: "good", unit: "%" },
+                    { name: "Dependency Risk", target: 20, current: 15, status: "good", unit: "%", inverse: true },
+                    { name: "Innovation Adoption", target: 80, current: 88, status: "good", unit: "%" },
+                    { name: "Diversification", target: 5, current: 4.5, status: "good", unit: "x" }
+                ],
+                info: `
+                    <h4>The Inward Infinity of Potential</h4>
+                    <p>Imagine the sun at the center of a solar system—not only radiating energy but also influencing every orbiting body. This is the essence of the Source of Energy Layer for your organization. It is the inward infinity—an expansive ecosystem of external forces and innovations shaping industries and businesses.</p>
+                    <p><strong>Key Concepts:</strong></p>
+                    <ul>
+                        <li><strong>The Inward Infinity:</strong> A Universe of Potential. It encompasses all external resources, innovations, and opportunities (e.g., AI Revolution).</li>
+                        <li><strong>Dependencies:</strong> The Pillars of Growth. Reliance on external providers (like Netflix on AWS) is a strength when managed well.</li>
+                        <li><strong>Innovation as Energy:</strong> Adapt or Perish. Adopting innovations at the right time (like Tesla with batteries) redefines trajectories.</li>
+                        <li><strong>Contracts:</strong> The Gatekeepers. Formalizing relationships to ensure alignment (e.g., Adobe's Cloud Transformation).</li>
+                        <li><strong>Resilience Through Diversification:</strong> Relying on multiple sources (like Google's hybrid model) mitigates risk.</li>
+                    </ul>
+                    <p><strong>Why it Matters:</strong> It fuels everything else, determines resilience, drives innovation, and shapes strategic alignment.</p>
+                `,
+                timelineEvents: [
+                    { label: "AI Revolution", date: "2023 Q1" },
+                    { label: "Cloud Migration", date: "2023 Q3" },
+                    { label: "Strategic Alliance", date: "2024 Q1" },
+                    { label: "Market Shift", date: "2024 Q4" }
+                ],
+                mockHistory: {
+                    "External Alignment": [60, 65, 70, 75, 78, 80, 82, 84, 85, 85],
+                    "Dependency Risk": [40, 38, 35, 30, 28, 25, 22, 20, 18, 15],
+                    "Innovation Adoption": [50, 55, 60, 68, 72, 75, 80, 82, 85, 88],
+                    "Diversification": [2.0, 2.2, 2.5, 2.8, 3.0, 3.5, 3.8, 4.0, 4.2, 4.5]
+                }
+            },
+            "OUTWARD INFINITY": {
+                health: "Limitless",
+                healthClass: "health-good",
+                metrics: [
+                    { name: "Market Expansion", target: 100, current: 15, status: "risk", unit: "%" },
+                    { name: "Innovation Pipeline", target: 50, current: 42, status: "good", unit: "Projects" },
+                    { name: "Moonshot Viability", target: 10, current: 3, status: "risk", unit: "Bets" },
+                    { name: "Ecosystem Reach", target: 100, current: 65, status: "good", unit: "Partners" }
+                ],
+                info: `
+                    <h4>The Outward Infinity Layer: Beyond Boundaries</h4>
+                    <p>The Outward Infinity Layer represents the vast expanse of untapped possibilities that stretch beyond your Max Consumer Base. It’s the realm of imagination, innovation, and discovery.</p>
+                    <p><strong>Key Concepts:</strong></p>
+                    <ul>
+                        <li><strong>Untapped Markets:</strong> Opportunities to create demand where none existed (e.g., SpaceX & Mars).</li>
+                        <li><strong>Emerging Technologies:</strong> Disruptive ideas unlocking new opportunities (e.g., Generative AI).</li>
+                        <li><strong>Paradigm Shifts:</strong> Anticipating changes in consumer behavior (e.g., Sustainability).</li>
+                        <li><strong>Collaborative Frontiers:</strong> Crossing boundaries to create innovative solutions (e.g., Apple Watch).</li>
+                    </ul>
+                    <p><strong>Why it Matters:</strong> It drives visionary thinking, sparks innovation, and ensures long-term relevance.</p>
+                `,
+                timelineEvents: [
+                    { label: "Moonshot Launch", date: "2024 Q2" },
+                    { label: "New Market Entry", date: "2024 Q4" },
+                    { label: "Global Alliance", date: "2025 Q1" }
+                ],
+                mockHistory: {
+                    "Market Expansion": [5, 6, 8, 10, 12, 13, 14, 14, 15, 15],
+                    "Innovation Pipeline": [20, 22, 25, 28, 30, 35, 38, 40, 41, 42],
+                    "Moonshot Viability": [0, 0, 1, 1, 1, 2, 2, 2, 3, 3],
+                    "Ecosystem Reach": [30, 35, 40, 45, 50, 55, 58, 60, 62, 65]
+                }
+            },
             "BUSINESS LAYER": {
                 health: "At Risk",
                 healthClass: "health-risk",
@@ -1379,7 +1447,9 @@
             // --- FIX: Only apply glow if glowColor is explicitly set ---
             if (glowColor && text !== "OUTWARD INFINITY") {
                 ctx.shadowColor = glowColor;
-                ctx.shadowBlur = fontSizePx * 0.15;
+                ctx.shadowBlur = fontSizePx * 0.4; // Increased blur for stronger glow
+                ctx.strokeStyle = glowColor;
+                ctx.lineWidth = fontSizePx * 0.08; // Add stroke for visibility
             } else if (text === "OUTWARD INFINITY") {
                 // Apply standard, subtle shadow for readability without bloom
                 ctx.shadowColor = 'rgba(0,0,0,0.8)';
@@ -1411,6 +1481,9 @@
                 ctx.save();
                 ctx.translate(x, h / 2);
                 ctx.scale(scaleX * 0.8, 1.3); // Scale factor 0.8 to reduce horizontal stretch/overlap
+                if (glowColor && text !== "OUTWARD INFINITY") {
+                    ctx.strokeText(text, 0, 0); // Stroke first for glow
+                }
                 ctx.fillText(text, 0, 0);
                 ctx.restore();
             }
@@ -1541,7 +1614,7 @@
                     { offset: 0.00, color: "#6DEBC4" }, { offset: 0.20, color: "#5BC6A7" }, { offset: 0.40, color: "#4CA78F" },
                     { offset: 0.60, color: "#3D8874" }, { offset: 0.80, color: "#317262" }, { offset: 1.00, color: "#296255" }
                 ],
-                labelColor: "#FF00FF", textGlow: "#FF00FF", glossiness: 0.1
+                labelColor: "#000000", textGlow: "#39FF14", glossiness: 0.1
             },
             {
                 name: "PRODUCT LAYER",
@@ -1700,6 +1773,7 @@
             side: THREE.DoubleSide
         });
         const sun = new THREE.Mesh(sunGeo, sunMat);
+        sun.userData = { type: 'layer', layerName: 'Source of Energy' };
         scene.add(sun);
 
         // Floating Label for Source of Energy
@@ -1739,7 +1813,7 @@
         scene.add(sunAmbient);
 
         // Initialize Layers with DEFAULT Thickness (Remains unchanged)
-        const clickTargets = [];
+        const clickTargets = [sun];
 
         // Generate Asteroid Texture Once
         const asteroidTexture = createAsteroidTexture();
