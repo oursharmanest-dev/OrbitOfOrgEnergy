@@ -1,0 +1,2557 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Orbit of Organizational Energy</title>
+
+    <!-- Import 'Antonio' font -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Antonio:wght@600;700&display=swap" rel="stylesheet">
+
+    <!-- Marked for Markdown parsing -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/marked/9.1.2/marked.min.js"></script>
+
+    <!-- Chart.js for Graphs -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.2/dist/chart.umd.min.js"></script>
+
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            background-color: #02020a;
+            font-family: 'Antonio', sans-serif;
+        }
+
+        #canvas-container {
+            width: 100vw;
+            height: 100vh;
+            display: block;
+        }
+
+        /* UI Overlay Styles */
+        #ui-layer {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+
+        header {
+            text-align: center;
+            color: #ffffff;
+            text-shadow: 0 0 10px rgba(100, 200, 255, 0.5);
+            margin-top: 10px;
+            pointer-events: auto;
+        }
+
+        h1 {
+            margin: 0;
+            font-weight: 700;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            font-size: 3rem;
+        }
+
+        h2 {
+            margin: 5px 0 0 0;
+            font-weight: 600;
+            font-size: 1.2rem;
+            color: #aaccff;
+            opacity: 0.8;
+            letter-spacing: 1px;
+        }
+
+        /* --- AI ADVISOR PANEL --- */
+        #ai-panel {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            width: 500px;
+            /* Increased width for better charts */
+            max-height: 95vh;
+            background: rgba(10, 20, 40, 0.95);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(100, 200, 255, 0.3);
+            border-radius: 12px;
+            padding: 25px;
+            color: #fff;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            pointer-events: auto;
+            box-shadow: 0 0 40px rgba(0, 0, 0, 0.6);
+            transform: translateX(120%);
+            transition: transform 0.4s cubic-bezier(0.22, 1, 0.36, 1);
+            overflow-y: auto;
+            font-family: 'Segoe UI', sans-serif;
+            z-index: 1000;
+        }
+
+        #ai-panel.active {
+            transform: translateX(0);
+        }
+
+        /* Header Section inside Panel */
+        .panel-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            padding-bottom: 10px;
+            margin-bottom: 5px;
+            flex-shrink: 0;
+        }
+
+        #ai-panel h3 {
+            margin: 0;
+            font-family: 'Antonio', sans-serif;
+            font-size: 1.8rem;
+            color: #00AEEF;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        /* Health Badge */
+        .health-badge {
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 0.8rem;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .health-good {
+            background: rgba(46, 204, 113, 0.2);
+            color: #2ecc71;
+            border: 1px solid #2ecc71;
+        }
+
+        .health-risk {
+            background: rgba(241, 196, 15, 0.2);
+            color: #f1c40f;
+            border: 1px solid #f1c40f;
+        }
+
+        .health-critical {
+            background: rgba(231, 76, 60, 0.2);
+            color: #e74c3c;
+            border: 1px solid #e74c3c;
+        }
+
+        /* Metrics Grid */
+        #metrics-view {
+            display: block;
+            flex: 1;
+            overflow-y: auto;
+        }
+
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+
+        .metric-card {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 8px;
+            padding: 10px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .metric-name {
+            font-size: 0.85rem;
+            color: #aaa;
+            margin-bottom: 5px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .metric-status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+        }
+
+        .metric-values {
+            font-size: 0.9rem;
+        }
+
+        .current-val {
+            font-size: 1.1rem;
+            font-weight: bold;
+            color: #fff;
+        }
+
+        .target-val {
+            font-size: 0.8rem;
+            color: #888;
+        }
+
+        /* Interactive Actions */
+        .action-row {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+            flex-shrink: 0;
+        }
+
+        .action-btn {
+            flex: 1;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: #ddd;
+            padding: 8px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.85rem;
+            transition: all 0.2s;
+            text-align: center;
+        }
+
+        .action-btn:hover {
+            background: rgba(255, 255, 255, 0.2);
+            color: #fff;
+        }
+
+        .action-btn.info {
+            border-color: #00AEEF;
+            color: #00AEEF;
+        }
+
+        .action-btn.info:hover {
+            background: rgba(0, 174, 239, 0.2);
+        }
+
+        .action-btn.active-view {
+            background: #00AEEF;
+            color: #111;
+            font-weight: 700;
+            border-color: #00AEEF;
+        }
+
+        /* New Back Button Style */
+        .back-link {
+            background: none;
+            border: none;
+            color: #00AEEF;
+            font-size: 0.9rem;
+            cursor: pointer;
+            text-align: left;
+            padding: 0;
+            margin-bottom: 15px;
+            display: inline-block;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .back-link:hover {
+            text-decoration: underline;
+            color: #fff;
+        }
+
+        /* Data Visualization Views */
+        #data-visual-container {
+            display: none;
+            flex-direction: column;
+            gap: 10px;
+            background: rgba(0, 0, 0, 0.3);
+            padding: 15px;
+            border-radius: 8px;
+            border-left: 3px solid #00AEEF;
+            margin-bottom: 15px;
+            flex: 1;
+            overflow-y: auto;
+            min-height: 400px;
+        }
+
+        /* Tab Navigation for Charts */
+        .chart-tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+            overflow-x: auto;
+            padding-bottom: 5px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .chart-tab-btn {
+            background: transparent;
+            border: none;
+            color: #aaa;
+            padding: 5px 10px;
+            cursor: pointer;
+            font-family: 'Segoe UI', sans-serif;
+            font-size: 0.9rem;
+            white-space: nowrap;
+            border-bottom: 2px solid transparent;
+            transition: all 0.2s;
+        }
+
+        .chart-tab-btn:hover {
+            color: #fff;
+        }
+
+        .chart-tab-btn.active {
+            color: #fff;
+            border-bottom-color: #00AEEF;
+            font-weight: bold;
+        }
+
+        .chart-wrapper {
+            height: 300px;
+            /* Fixed height for single chart */
+            width: 100%;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 6px;
+            padding: 10px;
+            box-sizing: border-box;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .chart-title {
+            font-family: 'Antonio', sans-serif;
+            font-size: 1.1rem;
+            color: #aaccff;
+            margin-bottom: 10px;
+            text-transform: uppercase;
+        }
+
+        /* Info Content Area */
+        #layer-info-content {
+            display: none;
+            background: rgba(0, 0, 0, 0.3);
+            padding: 20px;
+            border-radius: 8px;
+            font-size: 0.95rem;
+            line-height: 1.6;
+            color: #ccc;
+            flex: 1;
+            overflow-y: auto;
+            border-left: 3px solid #00AEEF;
+            margin-bottom: 15px;
+            min-height: 400px;
+        }
+
+        #layer-info-content h4 {
+            color: #fff;
+            margin-top: 0;
+            margin-bottom: 15px;
+            font-size: 1.2rem;
+        }
+
+        #layer-info-content strong {
+            color: #fff685;
+        }
+
+        #layer-info-content p {
+            margin-bottom: 15px;
+        }
+
+        #layer-info-content ul {
+            margin-bottom: 15px;
+        }
+
+        #layer-info-content li {
+            margin-bottom: 8px;
+        }
+
+        /* Timeline Styles */
+        .timeline-container {
+            position: relative;
+            padding: 30px 0;
+            overflow-x: auto;
+            white-space: nowrap;
+            min-height: 220px;
+        }
+
+        .timeline-bar {
+            height: 2px;
+            background: #00AEEF;
+            position: absolute;
+            left: 20px;
+            right: 20px;
+            top: 100px;
+        }
+
+        .timeline-event {
+            position: relative;
+            display: inline-block;
+            margin: 0 50px;
+            text-align: center;
+            width: 140px;
+            vertical-align: top;
+        }
+
+        .event-dot {
+            width: 12px;
+            height: 12px;
+            background: #fff;
+            border-radius: 50%;
+            border: 3px solid #00AEEF;
+            position: absolute;
+            top: -7px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 10;
+        }
+
+        .event-label {
+            position: absolute;
+            width: 160px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 0.85rem;
+            color: #fff;
+            padding: 8px;
+            border-radius: 6px;
+            top: -70px;
+            /* Above the bar */
+            background: rgba(0, 174, 239, 0.15);
+            border: 1px solid #00AEEF;
+            white-space: normal;
+            line-height: 1.3;
+        }
+
+        .event-date {
+            font-weight: bold;
+            color: #aaccff;
+            margin-top: 10px;
+            font-size: 0.8rem;
+            position: absolute;
+            top: 115px;
+            left: 50%;
+            transform: translateX(-50%);
+            white-space: normal;
+            width: 100px;
+        }
+
+        /* AI Interaction Area */
+        .ai-interaction {
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            padding-top: 15px;
+            flex-shrink: 0;
+        }
+
+        #ai-context-input {
+            background: rgba(0, 0, 0, 0.4);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: #fff;
+            padding: 12px;
+            border-radius: 6px;
+            width: 100%;
+            box-sizing: border-box;
+            font-family: inherit;
+            resize: vertical;
+            font-size: 0.95rem;
+        }
+
+        #ai-context-input:focus {
+            outline: none;
+            border-color: #00AEEF;
+        }
+
+        .btn-group {
+            display: flex;
+            gap: 10px;
+        }
+
+        .ai-btn {
+            flex: 1;
+            background: linear-gradient(45deg, #0054A6, #00AEEF);
+            border: none;
+            color: white;
+            padding: 12px 5px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-family: 'Antonio', sans-serif;
+            font-size: 1.1rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 5px;
+            margin-top: 5px;
+        }
+
+        .ai-btn.secondary {
+            background: linear-gradient(45deg, #662D91, #92278F);
+        }
+
+        .ai-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 174, 239, 0.4);
+        }
+
+        .ai-btn.secondary:hover {
+            box-shadow: 0 5px 15px rgba(146, 39, 143, 0.4);
+        }
+
+        .ai-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        #ai-output {
+            font-size: 1rem;
+            line-height: 1.6;
+            color: #e0e0e0;
+            min-height: 50px;
+            margin-top: 10px;
+        }
+
+        #ai-output strong {
+            color: #fff685;
+        }
+
+        #ai-output h1,
+        #ai-output h2,
+        #ai-output h3 {
+            font-family: 'Antonio', sans-serif;
+            color: #aaccff;
+            margin-top: 15px;
+            margin-bottom: 5px;
+        }
+
+        #ai-output ul {
+            padding-left: 20px;
+        }
+
+        #ai-output .back-link {
+            text-align: right;
+            display: block;
+            margin-top: 0px;
+            margin-bottom: 10px;
+        }
+
+        .close-btn {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: none;
+            border: none;
+            color: #aaa;
+            font-size: 2rem;
+            cursor: pointer;
+            line-height: 1;
+            z-index: 10;
+        }
+
+        .close-btn:hover {
+            color: #fff;
+        }
+
+        /* Loader */
+        .spinner {
+            border: 3px solid rgba(255, 255, 255, 0.1);
+            border-top: 3px solid #00AEEF;
+            border-radius: 50%;
+            width: 16px;
+            height: 16px;
+            animation: spin 1s linear infinite;
+            display: none;
+        }
+
+        @keyframes spin {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+
+        /* --- BOTTOM CONTROLS --- */
+        #controls-area {
+            position: absolute;
+            bottom: 30px;
+            right: 30px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            align-items: flex-end;
+            pointer-events: auto;
+        }
+
+        .ctrl-btn {
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            color: #fff;
+            padding: 12px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-family: 'Antonio', sans-serif;
+            font-size: 1.1rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            backdrop-filter: blur(5px);
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            min-width: 180px;
+            justify-content: center;
+        }
+
+        .ctrl-btn:hover {
+            background: rgba(255, 255, 255, 0.2);
+            border-color: #fff;
+            transform: scale(1.05);
+        }
+
+        #toggle-view-btn {
+            background: linear-gradient(45deg, #2c3e50, #4ca1af);
+            border-color: #4ca1af;
+            font-weight: 700;
+            box-shadow: 0 0 15px rgba(76, 161, 175, 0.4);
+        }
+
+        #toggle-view-btn:hover {
+            background: linear-gradient(45deg, #4ca1af, #2c3e50);
+            box-shadow: 0 0 20px rgba(76, 161, 175, 0.6);
+        }
+    </style>
+
+    <!-- Import Three.js -->
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js"></script>
+    <!-- Import OrbitControls -->
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+
+    <!-- Post Processing Scripts - Standardized to jsdelivr -->
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/shaders/CopyShader.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/shaders/LuminosityHighPassShader.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/EffectComposer.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/ShaderPass.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/RenderPass.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/UnrealBloomPass.js"></script>
+
+    <!-- Sun Shader Definition -->
+    <script id="sun-vertex" type="x-shader/x-vertex">
+        uniform float time;
+        varying vec2 vUv;
+        varying vec3 vPosition;
+        varying vec3 vNormal;
+
+        void main() {
+            vUv = uv;
+            vPosition = position;
+            vNormal = normal;
+            gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+        }
+    </script>
+
+    <script id="sun-fragment" type="x-shader/x-fragment">
+        uniform float time;
+        varying vec2 vUv;
+        varying vec3 vPosition;
+        varying vec3 vNormal;
+
+        vec3 mod289(vec3 x) { return x - floor(x * (1.0 / 289.0)) * 289.0; }
+        vec4 mod289(vec4 x) { return x - floor(x * (1.0 / 289.0)) * 289.0; }
+        vec4 permute(vec4 x) { return mod289(((x*34.0)+1.0)*x); }
+        vec4 taylorInvSqrt(vec4 r) { return 1.79284291400159 - 0.85373472095314 * r; }
+        float snoise(vec3 v) {
+            const vec2 C = vec2(1.0/6.0, 1.0/3.0);
+            const vec4 D = vec4(0.0, 0.5, 1.0, 2.0);
+            vec3 i  = floor(v + dot(v, C.yyy));
+            vec3 x0 = v - i + dot(i, C.xxx);
+            vec3 g = step(x0.yzx, x0.xyz);
+            vec3 l = 1.0 - g;
+            vec3 i1 = min( g.xyz, l.zxy );
+            vec3 i2 = max( g.xyz, l.zxy );
+            vec3 x1 = x0 - i1 + C.xxx;
+            vec3 x2 = x0 - i2 + C.yyy;
+            vec3 x3 = x0 - D.yyy;
+            i = mod289(i);
+            vec4 p = permute( permute( permute(
+                        i.z + vec4(0.0, i1.z, i2.z, 1.0 ))
+                    + i.y + vec4(0.0, i1.y, i2.y, 1.0 ))
+                    + i.x + vec4(0.0, i1.x, i2.x, 1.0 ));
+            float n_ = 0.142857142857;
+            vec3  ns = n_ * D.wyz - D.xzx;
+            vec4 j = p - 49.0 * floor(p * ns.z * ns.z);
+            vec4 x_ = floor(j * ns.z);
+            vec4 y_ = floor(j - 7.0 * x_ );
+            vec4 x = x_ *ns.x + ns.yyyy;
+            vec4 y = y_ *ns.x + ns.yyyy;
+            vec4 h = 1.0 - abs(x) - abs(y);
+            vec4 b0 = vec4( x.xy, y.xy );
+            vec4 b1 = vec4( x.zw, y.zw );
+            vec4 s0 = floor(b0)*2.0 + 1.0;
+            vec4 s1 = floor(b1)*2.0 + 1.0;
+            vec4 sh = -step(h, vec4(0.0));
+            vec4 a0 = b0.xzyw + s0.xzyw*sh.xxyy ;
+            vec4 a1 = b1.xzyw + s1.xzyw*sh.zzww ;
+            vec3 p0 = vec3(a0.xy,h.x);
+            vec3 p1 = vec3(a0.zw,h.y);
+            vec3 p2 = vec3(a1.xy,h.z);
+            vec3 p3 = vec3(a1.zw,h.w);
+            vec4 norm = taylorInvSqrt(vec4(dot(p0,p0), dot(p1,p1), dot(p2, p2), dot(p3,p3)));
+            p0 *= norm.x;
+            p1 *= norm.y;
+            p2 *= norm.z;
+            p3 *= norm.w;
+            vec4 m = max(0.6 - vec4(dot(x0,x0), dot(x1,x1), dot(x2,x2), dot(x3,x3)), 0.0);
+            m = m * m;
+            return 42.0 * dot( m*m, vec4( dot(p0,x0), dot(p1,x1), dot(p2,x2), dot(p3,x3) ) );
+        }
+
+        void main() {
+            float noiseVal = snoise(vPosition * 0.8 + vec3(time * 0.5));
+            vec3 darkColor = vec3(0.8, 0.1, 0.0); 
+            vec3 midColor = vec3(1.0, 0.5, 0.0);  
+            vec3 brightColor = vec3(1.0, 1.0, 0.8); 
+
+            vec3 color = mix(darkColor, midColor, smoothstep(-0.2, 0.2, noiseVal));
+            color = mix(color, brightColor, smoothstep(0.2, 0.8, noiseVal));
+
+            // Reverted output brightness to original for soft bloom look
+            gl_FragColor = vec4(color * 1.5, 1.0); 
+        }
+    </script>
+</head>
+
+<body>
+
+    <div id="ui-layer">
+        <header>
+            <h1>Orbit of Organizational Energy</h1>
+            <h2>A whole-system view of organizational energy, decisions, and dependencies</h2>
+        </header>
+
+        <!-- AI Advisor Panel -->
+        <div id="ai-panel">
+            <button class="close-btn" onclick="closePanel()">×</button>
+
+            <div class="panel-header">
+                <h3 id="panel-title">Layer Analysis</h3>
+                <div id="health-badge" class="health-badge health-good">On Track</div>
+            </div>
+
+            <!-- Standard Metrics View -->
+            <div id="metrics-view">
+                <div id="metrics-area" class="metrics-grid">
+                    <!-- Metrics will be injected here -->
+                </div>
+
+                <!-- Action Buttons -->
+                <div class="action-row">
+                    <button class="action-btn" id="graph-btn" onclick="showGraphView()">📊 View Graphs</button>
+                    <button class="action-btn" id="timeline-btn" onclick="showTimelineView()">📅 Timeline</button>
+                    <button class="action-btn info" onclick="toggleInfo()">ℹ️ Learn More</button>
+                </div>
+            </div>
+
+            <!-- Data Visualization Container (Graphs/Timeline) -->
+            <div id="data-visual-container">
+                <!-- Content injected by showGraphView/showTimelineView -->
+            </div>
+
+            <!-- Learn More Content -->
+            <div id="layer-info-content">
+                <button class="back-link" onclick="toggleInfo()">← Back to Overview</button>
+                <div id="layer-info-text">
+                    <!-- Educational content injected here -->
+                </div>
+            </div>
+
+            <!-- AI Interaction -->
+            <div class="ai-interaction">
+                <p style="margin:0; font-size:0.9rem; color:#aaa; margin-bottom: 10px;">Ask the AI Advisor about this
+                    layer:</p>
+
+                <textarea id="ai-context-input" rows="2" placeholder="e.g. How can we optimize this layer?"></textarea>
+
+                <div class="btn-group">
+                    <button class="ai-btn" onclick="askGemini('insights')">
+                        <div class="spinner" id="loading-spinner-insights"></div>
+                        <span id="btn-text-insights">✨ Insights</span>
+                    </button>
+                    <button class="ai-btn secondary" onclick="askGemini('scenario')">
+                        <div class="spinner" id="loading-spinner-scenario"></div>
+                        <span id="btn-text-scenario">🎲 Simulate</span>
+                    </button>
+                </div>
+
+                <div id="ai-output">
+                    <!-- AI Content will appear here -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Bottom Controls -->
+        <div id="controls-area">
+            <button class="ctrl-btn" id="toggle-view-btn" onclick="toggleView()">
+                👁 Show Real Org
+            </button>
+            <button class="ctrl-btn" id="reset-view-btn" onclick="resetView()">
+                ⟲ Center View
+            </button>
+        </div>
+    </div>
+
+    <div id="canvas-container"></div>
+
+    <script>
+        // --- Configuration ---
+        const APP_CONFIG = {
+            coreRadius: 4,
+            gapSize: 3,
+            // Global thickness used if not specified per layer.
+            defaultThickness: 5,
+            layerGap: 0,
+            segmentCount: 128,
+        };
+
+        // --- Global Array to Hold Layer Groups ---
+        const layerGroups = [];
+
+        // --- Global Color Palette for Nebula ---
+        const NEBULA_COLORS = [
+            new THREE.Color('#4169E1'), // Royal Blue
+            new THREE.Color('#BA55D3'), // Medium Orchid
+            new THREE.Color('#00BFFF'), // Deep Sky Blue
+            new THREE.Color('#FF69B4'), // Hot Pink
+            new THREE.Color('#9370DB')  // Medium Purple
+        ];
+
+        // --- DATA: Layer Information & Metrics ---
+        const LAYER_DATA = {
+            "BUSINESS LAYER": {
+                health: "At Risk",
+                healthClass: "health-risk",
+                metrics: [
+                    { name: "Revenue (M)", target: 10, current: 8.5, status: "risk", unit: "M" },
+                    { name: "Profit Margin (%)", target: 20, current: 18, status: "risk", unit: "%" },
+                    { name: "CAC ($)", target: 50, current: 45, status: "good", unit: "$", inverse: true }, // inverse means lower is better
+                    { name: "Market Share (%)", target: 15, current: 12, status: "risk", unit: "%" }
+                ],
+                info: `
+                    <h4>The Engine of Profitability and Growth</h4>
+                    <p>The Business Layer represents the financial core of your organization where external-facing efforts converge into tangible outcomes like revenue, profit, and sustainable growth. It is about making smart decisions that fuel innovation and secure the future of your organization.</p>
+
+                    <p><strong>What the Business Layer Represents:</strong></p>
+                    <ul>
+                        <li><strong>Revenue Generation:</strong> Income streams from product sales, subscriptions, or services (e.g., Spotify's subscription model).</li>
+                        <li><strong>Profitability:</strong> The surplus after deducting expenses (e.g., Apple's margin on hardware sales).</li>
+                        <li><strong>Cost Efficiency:</strong> Managing expenses (including Liabilities and Amplifying Layer costs) to maximize returns (e.g., Walmart's supply chain optimization).</li>
+                        <li><strong>Market Position:</strong> Performance against competitors (e.g., Tesla’s EV market leadership).</li>
+                    </ul>
+
+                    <p><strong>Why it Matters:</strong> It is the engine that transforms all other organizational efforts into measurable success, ensuring sustainability and fueling future innovation. It is the ultimate convergence point where product value meets financial reality.</p>
+
+                    <h4>When the Business Layer Struggles</h4>
+                    <p>Failures often occur even with a strong Product or Amplifying Layer. Common causes include:</p>
+                    <ul>
+                        <li><strong>Pricing and Revenue Model Issues:</strong> The model doesn't align with market willingness to pay (e.g., MoviePass's unsustainable pricing).</li>
+                        <li><strong>Inability to Scale Profitably:</strong> Operational costs outpace revenue growth (e.g., WeWork's operational inefficiencies).</li>
+                        <li><strong>External Market Conditions:</strong> Market disruptions or economic downturns (e.g., Kodak failing to adapt to digital).</li>
+                    </ul>
+                    `,
+                timelineEvents: [
+                    { date: "Q1 '24", label: "Product Alpha Launch" },
+                    { date: "Q2 '24", label: "Competitor Price Drop" },
+                    { date: "Q3 '24", label: "New Sales Channel Onboarded" },
+                    { date: "Q4 '24", label: "Annual Budget Finalized" },
+                    { date: "Q1 '25", label: "Current Period" }
+                ],
+                // Mock data for charting (10 points representing 10 periods)
+                mockHistory: {
+                    "Revenue (M)": [4, 5, 6, 7.5, 9, 9.5, 9.2, 8.8, 8.2, 8.5],
+                    "Profit Margin (%)": [12, 14, 16, 17, 19, 19.5, 19.1, 18.5, 17.8, 18],
+                    "CAC ($)": [60, 58, 55, 52, 48, 47, 46, 45, 45, 45],
+                    "Market Share (%)": [5, 7, 9, 10, 11, 12, 12, 12.5, 12, 12]
+                }
+            },
+            // PRODUCT LAYER DATA 
+            "PRODUCT LAYER": {
+                health: "At Risk",
+                healthClass: "health-risk",
+                metrics: [
+                    { name: "NPS", target: 50, current: 35, status: "risk", unit: "" },
+                    { name: "Churn Rate (%)", target: 5, current: 8, status: "critical", unit: "%", inverse: true },
+                    { name: "CLTV ($)", target: 1200, current: 1050, status: "risk", unit: "$" },
+                    { name: "Innovation Velocity", target: 4, current: 3, status: "risk", unit: " features/Q" }
+                ],
+                info: `
+                    <h4>The Heartbeat of Your Organization</h4>
+                    <p>The Product Layer is the foundation where ideas transform into tangible solutions that solve customer problems, create value, and drive initial growth. It represents everything your organization creates and offers to fulfill a customer's needs.</p>
+
+                    <p><strong>What the Product Layer Represents:</strong></p>
+                    <ul>
+                        <li><strong>Value Creation:</strong> Transforming ideas into meaningful customer solutions (e.g., Netflix's convenient entertainment access).</li>
+                        <li><strong>Customer Engagement:</strong> The primary touchpoint where trust and loyalty are earned (e.g., Apple's seamless user experience).</li>
+                        <li><strong>Revenue Driver:</strong> The core offering customers are willing to pay for (e.g., Slack's subscription platform).</li>
+                    </ul>
+
+                    <p><strong>Health Indicators:</strong></p>
+                    <ul>
+                        <li><strong>Customer Satisfaction:</strong> Measured by NPS and Churn.</li>
+                        <li><strong>Innovation:</strong> Ensuring the product evolves to anticipate needs and market trends.</li>
+                        <li><strong>Scalability & UX:</strong> Maintaining quality and performance as user demand increases.</li>
+                    </ul>
+
+                    <p><strong>Final Thoughts:</strong> The health of this layer is a direct reflection of your organization’s ability to innovate, scale, and delight customers. Sustained, purposeful action is required to keep the product resilient and relevant.</p>
+                    `,
+                timelineEvents: [
+                    { date: "Q1 '24", label: "Major UI Redesign Begins" },
+                    { date: "Q2 '24", label: "Critical Bug in Core Feature" },
+                    { date: "Q3 '24", label: "Competitor Launches Rival Product" },
+                    { date: "Q4 '24", label: "User Feedback Session" },
+                    { date: "Q1 '25", label: "Target Feature Release Deadline" }
+                ],
+                mockHistory: {
+                    "NPS": [45, 48, 42, 40, 38, 36, 35, 35, 34, 35],
+                    "Churn Rate (%)": [3, 4, 6, 7, 7.5, 8, 8, 8, 8, 8],
+                    "CLTV ($)": [1300, 1250, 1150, 1100, 1080, 1060, 1050, 1050, 1050, 1050],
+                    "Innovation Velocity": [4, 4, 3, 3, 3, 3, 3, 3, 3, 3]
+                }
+            },
+            // AMPLIFYING LAYER DATA
+            "AMPLIFYING LAYER": {
+                health: "On Track",
+                healthClass: "health-good",
+                metrics: [
+                    { name: "CAC ($)", target: 100, current: 110, status: "risk", unit: "$", inverse: true },
+                    { name: "CLTV ($)", target: 1000, current: 1100, status: "good", unit: "$" },
+                    { name: "Cust. Sat. (CSAT)", target: 4.5, current: 4.6, status: "good", unit: "" },
+                    { name: "Avg. Resp. Time", target: "2h", current: "1.5h", status: "good", unit: "" }
+                ],
+                info: `
+                    <h4>Scaling Your Product’s Impact</h4>
+                    <p>The Amplifying Layer acts as the bridge between your internal innovation and the external market. It includes sales, marketing, support, and user onboarding—functions that scale reach and build trust.</p>
+
+                    <p><strong>Key Components:</strong></p>
+                    <ul>
+                        <li><strong>Sales:</strong> Connecting the product with the right customers to drive revenue.</li>
+                        <li><strong>Marketing:</strong> Creating awareness and demand (e.g., Apple's "Think Different").</li>
+                        <li><strong>Customer Support:</strong> Ensuring satisfaction and resolving issues (e.g., Zappos' legendary service).</li>
+                        <li><strong>Onboarding & Success:</strong> Reducing friction and driving value realization (e.g., Slack's interactive tutorials).</li>
+                    </ul>
+
+                    <p><strong>Strategic Focus:</strong> Consistency in messaging and investment in customer relationships are key. Every effort here should have a measurable ROI, extending the reach and impact of your product far beyond what it could achieve alone.</p>
+                    `,
+                timelineEvents: [
+                    { date: "Q1 '24", label: "New Marketing Campaign Launch" },
+                    { date: "Q2 '24", label: "Sales Team Expansion" },
+                    { date: "Q3 '24", label: "Customer Support Tool Upgrade" },
+                    { date: "Q4 '24", label: "Global Expansion Strategy" },
+                    { date: "Q1 '25", label: "Referral Program Kickoff" }
+                ],
+                mockHistory: {
+                    "CAC ($)": [80, 85, 90, 95, 100, 105, 108, 110, 110, 110], // Increasing cost (Risk)
+                    "CLTV ($)": [900, 920, 950, 980, 1000, 1020, 1050, 1080, 1100, 1100], // Growing value (Good)
+                    "Cust. Sat. (CSAT)": [4.2, 4.3, 4.3, 4.4, 4.4, 4.5, 4.5, 4.6, 4.6, 4.6],
+                    "Avg. Resp. Time": [4, 3.5, 3, 2.8, 2.5, 2.2, 2, 1.8, 1.6, 1.5] // Improving (lower is better, mapped conceptually)
+                }
+            },
+            // LIABILITIES LAYER DATA
+            "LIABILITIES LAYER": {
+                health: "Stable",
+                healthClass: "health-good",
+                metrics: [
+                    { name: "Debt/Equity", target: 0.5, current: 0.45, status: "good", unit: "", inverse: true },
+                    { name: "Risk Reserves ($M)", target: 5.0, current: 5.2, status: "good", unit: "M" },
+                    { name: "Compliance Score", target: 100, current: 98, status: "risk", unit: "%" },
+                    { name: "Op. Risk Incidents", target: 0, current: 2, status: "risk", unit: "", inverse: true }
+                ],
+                info: `
+                    <h4>Managing the Weight of Responsibility</h4>
+                    <p>The Liability Layer represents the foundational commitments, debts, and operational costs that every organization must carry. It reflects the financial and strategic weight that must be managed to ensure stability.</p>
+
+                    <p><strong>What the Liability Layer Represents:</strong></p>
+                    <ul>
+                        <li><strong>Financial Liabilities:</strong> Debts, loans, and financial obligations that must be serviced.</li>
+                        <li><strong>Operational Liabilities:</strong> Ongoing costs like COGS (Cost of Goods Sold) and OpEx (Operating Expenses) required to run the business.</li>
+                        <li><strong>Strategic Liabilities:</strong> Long-term commitments or risks that constrain flexibility.</li>
+                    </ul>
+
+                    <p><strong>Why it Matters:</strong> Effective management of this layer ensures that the organization remains solvent and agile. Unchecked liabilities can drag down profitability and hinder growth.</p>
+
+                    <p><strong>Health Indicators:</strong></p>
+                    <ul>
+                        <li><strong>COGS & OpEx:</strong> Lower is generally better for efficiency.</li>
+                        <li><strong>Debt Levels:</strong> Sustainable leverage is key to growth without excessive risk.</li>
+                        <li><strong>Liquidity:</strong> Ensuring enough cash flow to meet short-term obligations.</li>
+                    </ul>
+                    `,
+                timelineEvents: [
+                    { date: "Q1 '24", label: "Secured Venture Debt" },
+                    { date: "Q2 '24", label: "GDPR Compliance Audit" },
+                    { date: "Q3 '24", label: "Supply Chain Disruption" },
+                    { date: "Q4 '24", label: "Reserve Fund Allocation" },
+                    { date: "Q1 '25", label: "Debt Refinancing Strategy" }
+                ],
+                mockHistory: {
+                    "Debt/Equity": [0.6, 0.58, 0.55, 0.52, 0.5, 0.48, 0.47, 0.46, 0.45, 0.45],
+                    "Risk Reserves ($M)": [3.0, 3.5, 4.0, 4.2, 4.5, 4.8, 5.0, 5.1, 5.2, 5.2],
+                    "Compliance Score": [95, 96, 96, 97, 97, 98, 98, 98, 98, 98],
+                    "Op. Risk Incidents": [4, 3, 3, 2, 2, 1, 2, 1, 2, 2]
+                }
+            },
+            // CONSUMER LAYER DATA
+            "CONSUMER LAYER": {
+                health: "On Track",
+                healthClass: "health-good",
+                metrics: [
+                    { name: "NPS", target: 60, current: 65, status: "good", unit: "" },
+                    { name: "Retention Rate (%)", target: 85, current: 88, status: "good", unit: "%" },
+                    { name: "Partner Growth (%)", target: 10, current: 12, status: "good", unit: "%" },
+                    { name: "Dormant Re-eng. (%)", target: 5, current: 3, status: "risk", unit: "%" }
+                ],
+                info: `
+                    <h4>Where Engagement Fuels Growth</h4>
+                    <p>The Consumer Layer is the vibrant, living ecosystem where your product meets the world. It represents not just users, but a dynamic network of advocates, partners, and even dormant customers. If the Business Layer is the engine, this layer is the fuel.</p>
+
+                    <p><strong>Key Ecosystem Players:</strong></p>
+                    <ul>
+                        <li><strong>Current Customers:</strong> The foundation of validation and revenue (e.g., Netflix subscribers shaping content strategy).</li>
+                        <li><strong>Advocates:</strong> Organic amplifiers who evangelize your product (e.g., Apple fans posting unboxing videos).</li>
+                        <li><strong>Partners:</strong> Channel, integration, and strategic allies extending your reach (e.g., Shopify agencies).</li>
+                        <li><strong>Dormant & Passive Users:</strong> Untapped potential waiting for the right engagement (e.g., LinkedIn notifications).</li>
+                        <li><strong>Challenging Customers:</strong> Those highlighting gaps that drive innovation.</li>
+                    </ul>
+
+                    <p><strong>Why it Matters:</strong> It validates your product, drives organic growth through advocacy, and shapes future innovation via feedback loops.</p>
+
+                    <p><strong>Health Indicators:</strong></p>
+                    <ul>
+                        <li><strong>Engagement:</strong> Measured by Retention Rates, DAU/MAU.</li>
+                        <li><strong>Advocacy:</strong> Measured by Net Promoter Score (NPS) and Referral Rates.</li>
+                        <li><strong>Ecosystem Strength:</strong> Tracked by Active Partnerships and API Usage.</li>
+                        <li><strong>Resilience:</strong> Monitored via Churn Recovery and Re-engagement rates.</li>
+                    </ul>
+                    `,
+                timelineEvents: [
+                    { date: "Q1 '24", label: "Community Forum Launch" },
+                    { date: "Q2 '24", label: "Strategic Partnership Signed" },
+                    { date: "Q3 '24", label: "Referral Program 2.0" },
+                    { date: "Q4 '24", label: "Dormant User Win-back Campaign" },
+                    { date: "Q1 '25", label: "Customer Advisory Board Meeting" }
+                ],
+                mockHistory: {
+                    "NPS": [55, 58, 60, 62, 63, 64, 65, 65, 66, 65],
+                    "Retention Rate (%)": [82, 83, 84, 85, 86, 87, 87, 88, 88, 88],
+                    "Partner Growth (%)": [5, 6, 7, 8, 9, 10, 11, 11, 12, 12],
+                    "Dormant Re-eng. (%)": [1, 1.5, 2, 2.5, 2.8, 3, 3, 3, 2.9, 3]
+                }
+            },
+            // PLATFORM LAYER DATA
+            "PLATFORM LAYER": {
+                health: "Good",
+                healthClass: "health-good",
+                metrics: [
+                    { name: "System Uptime (%)", target: 99.9, current: 99.95, status: "good", unit: "%" },
+                    { name: "Active Users (MAU)", target: 50000, current: 52000, status: "good", unit: "" },
+                    { name: "Avg API Latency", target: 100, current: 85, status: "good", unit: "ms", inverse: true },
+                    { name: "Dev Ecosystem", target: 500, current: 420, status: "risk", unit: " devs" }
+                ],
+                info: `
+                    <h4>The Foundation of Scalability and Innovation</h4>
+                    <p>The Platform & Tools Layer is the machinery that powers your organization. It enables, scales, and sustains your ambitions, ensuring every function operates seamlessly.</p>
+
+                    <p><strong>Core Pillars:</strong></p>
+                    <ul>
+                        <li><strong>Scalability Infrastructure:</strong> Ensures growth without buckling under pressure (e.g., Zoom's scaling during COVID).</li>
+                        <li><strong>Operational Efficiency:</strong> Automates repetitive tasks, empowering high-impact work (e.g., Jira/Confluence).</li>
+                        <li><strong>Ecosystem Enablement:</strong> Invites collaboration and co-creation (e.g., Figma's plugin ecosystem).</li>
+                        <li><strong>Adaptability:</strong> Flexibility to pivot with trends (e.g., Stripe's rapid feature rollout).</li>
+                    </ul>
+
+                    <p><strong>Why it Matters:</strong> It turns vision into reality, multiplies team efforts through automation, and provides a competitive advantage that is hard to replicate.</p>
+                    `,
+                timelineEvents: [
+                    { date: "Q1 '24", label: "Cloud Infrastructure Migration" },
+                    { date: "Q2 '24", label: "Public API Beta Release" },
+                    { date: "Q3 '24", label: "Developer Portal Launch" },
+                    { date: "Q4 '24", label: "Workflow Automation Rollout" },
+                    { date: "Q1 '25", label: "Global CDN Expansion" }
+                ],
+                mockHistory: {
+                    "System Uptime (%)": [99.8, 99.85, 99.9, 99.9, 99.95, 99.95, 99.98, 99.95, 99.95, 99.95],
+                    "Active Users (MAU)": [45000, 46000, 47000, 48500, 50000, 51000, 51500, 52000, 51800, 52000],
+                    "Avg API Latency": [120, 115, 110, 105, 100, 95, 90, 88, 86, 85],
+                    "Dev Ecosystem": [300, 320, 340, 350, 380, 390, 400, 410, 415, 420]
+                }
+            },
+            // CONTRACTS LAYER DATA
+            "CONTRACTS LAYER": {
+                health: "Stable",
+                healthClass: "health-good",
+                metrics: [
+                    { name: "Vendor Diversity", target: 5, current: 3, status: "risk", unit: "" },
+                    { name: "Cost/Revenue Ratio", target: 15, current: 12, status: "good", unit: "%", inverse: true },
+                    { name: "Contract Renewal Rate", target: 90, current: 95, status: "good", unit: "%" },
+                    { name: "SLA Compliance", target: 99, current: 98.5, status: "good", unit: "%" }
+                ],
+                info: `
+                    <h4>The Gatekeeper of Organizational Growth</h4>
+                    <p>The Contracts Layer is the invisible scaffolding that holds your organization together. It represents the agreements, obligations, and partnerships that transform raw potential into structured action.</p>
+
+                    <p><strong>What the Contracts Layer Represents:</strong></p>
+                    <ul>
+                        <li><strong>External Provider Agreements:</strong> Access to essential tools and infrastructure (e.g., AWS for scalability).</li>
+                        <li><strong>Strategic Partnerships:</strong> Alliances that form the operational backbone (e.g., Netflix partnering with CDNs).</li>
+                        <li><strong>Cost Structures:</strong> Financial frameworks like subscription fees or usage-based pricing.</li>
+                    </ul>
+
+                    <p><strong>Why it Matters:</strong> It enables scalability by leveraging external expertise, manages risk through SLAs, and supports financial efficiency via favorable terms.</p>
+
+                    <p><strong>Health Indicators:</strong></p>
+                    <ul>
+                        <li><strong>Vendor Diversity:</strong> Prevents single points of failure.</li>
+                        <li><strong>Cost-to-Revenue Ratio:</strong> Indicates operational efficiency.</li>
+                        <li><strong>Contract Innovation:</strong> Flexible terms that support growth.</li>
+                    </ul>
+                    `,
+                timelineEvents: [
+                    { date: "Q1 '24", label: "Cloud Provider Contract Renewal" },
+                    { date: "Q2 '24", label: "Strategic Vendor Audit" },
+                    { date: "Q3 '24", label: "New SLA Negotiation" },
+                    { date: "Q4 '24", label: "Partnership Expansion" },
+                    { date: "Q1 '25", label: "Cost Optimization Review" }
+                ],
+                mockHistory: {
+                    "Vendor Diversity": [2, 2, 2, 3, 3, 3, 3, 3, 3, 3],
+                    "Cost/Revenue Ratio": [18, 17, 16, 15, 14, 13, 12, 12, 12, 12],
+                    "Contract Renewal Rate": [85, 88, 90, 92, 93, 94, 95, 95, 95, 95],
+                    "SLA Compliance": [97, 97.5, 98, 98, 98.2, 98.5, 98.5, 98.5, 98.5, 98.5]
+                }
+            },
+            // Defaults for other layers
+            "default": {
+                health: "On Track",
+                healthClass: "health-good",
+                metrics: [
+                    { name: "Efficiency", target: "95%", current: "94%", status: "good" },
+                    { name: "Utilization", target: "80%", current: "75%", status: "risk" }
+                ],
+                info: "<p>This layer is a critical component of the organizational orbit. Specific educational content for this layer is currently being compiled.</p>",
+                timelineEvents: [],
+                mockHistory: {}
+            }
+        };
+
+        // --- TEXTURE GENERATORS ---
+        // (createGradientTexture, createGlowTexture, createSunHaloTexture, createAsteroidTexture, createCloudTexture, createSoftGlowRing, createCurvedLabel, createFloatingLabel, createStarfield functions remain unchanged)
+
+        function createGradientTexture(stops) {
+            const width = 512;
+            const height = 4;
+            const canvas = document.createElement('canvas');
+            canvas.width = width;
+            canvas.height = height;
+            const ctx = canvas.getContext('2d');
+
+            const gradient = ctx.createLinearGradient(0, 0, width, 0);
+
+            stops.forEach(stop => {
+                // FIX: Ensure color is a string for Canvas API addColorStop
+                const cssColor = new THREE.Color(stop.color).getStyle();
+                gradient.addColorStop(stop.offset, cssColor);
+            });
+
+            ctx.fillStyle = gradient;
+            ctx.fillRect(0, 0, width, height);
+
+            const texture = new THREE.CanvasTexture(canvas);
+            texture.encoding = THREE.sRGBEncoding;
+            texture.minFilter = THREE.LinearFilter;
+            texture.magFilter = THREE.LinearFilter;
+            texture.needsUpdate = true;
+            return texture;
+        }
+
+        // Updated Generator for "Core + Halo" Glow Sprite with variable core size
+        function createGlowTexture(colorStr, coreSize = 0.2) {
+            const size = 128;
+            const canvas = document.createElement('canvas');
+            canvas.width = size;
+            canvas.height = size;
+            const ctx = canvas.getContext('2d');
+            const center = size / 2;
+
+            const gradient = ctx.createRadialGradient(center, center, 0, center, center, center);
+
+            // Core: Bright White for hot center
+            gradient.addColorStop(0, '#FFFFFF');
+            // Mid: The bright neon color, pushed out further for bigger glow
+            gradient.addColorStop(coreSize, new THREE.Color(colorStr).getStyle());
+            // Outer: Fading to transparent
+            gradient.addColorStop(1, 'rgba(0,0,0,0)');
+
+            ctx.fillStyle = gradient;
+            ctx.fillRect(0, 0, size, size);
+
+            const texture = new THREE.CanvasTexture(canvas);
+            texture.needsUpdate = true;
+            return texture;
+        }
+
+        // --- NEW: Sun Hard Halo Generator ---
+        function createSunHaloTexture() {
+            const size = 256;
+            const canvas = document.createElement('canvas');
+            canvas.width = size;
+            canvas.height = size;
+            const ctx = canvas.getContext('2d');
+            const center = size / 2;
+
+            const gradient = ctx.createRadialGradient(center, center, 0, center, center, size / 2);
+
+            // 0.0 - 0.15: White Core (Hidden by sphere, but provides center)
+            gradient.addColorStop(0, 'rgba(255, 255, 255, 1)');
+            // 0.2: The Hard Rim - Intense Yellowish White
+            gradient.addColorStop(0.2, 'rgba(255, 255, 200, 1)');
+            // 0.3: Rapid falloff to hot orange
+            gradient.addColorStop(0.3, 'rgba(255, 160, 0, 0.8)');
+            // 0.5: Fade out
+            gradient.addColorStop(0.5, 'rgba(255, 100, 0, 0.2)');
+            // 1.0: Transparent
+            gradient.addColorStop(1, 'rgba(0, 0, 0, 0)');
+
+            ctx.fillStyle = gradient;
+            ctx.fillRect(0, 0, size, size);
+
+            const texture = new THREE.CanvasTexture(canvas);
+            texture.needsUpdate = true;
+            return texture;
+        }
+
+        // --- New Circular Asteroid Texture ---
+        function createAsteroidTexture() {
+            const canvas = document.createElement('canvas');
+            canvas.width = 64;
+            canvas.height = 64;
+            const ctx = canvas.getContext('2d');
+
+            // Draw a solid circle
+            ctx.beginPath();
+            ctx.arc(32, 32, 28, 0, Math.PI * 2);
+            ctx.fillStyle = '#FFFFFF';
+            ctx.fill();
+
+            const texture = new THREE.CanvasTexture(canvas);
+            texture.needsUpdate = true;
+            return texture;
+        }
+
+        function createCloudTexture() {
+            const size = 128;
+            const canvas = document.createElement('canvas');
+            canvas.width = size;
+            canvas.height = size;
+            const ctx = canvas.getContext('2d');
+            const center = size / 2;
+
+            const gradient = ctx.createRadialGradient(center, center, 0, center, center, center);
+            gradient.addColorStop(0, 'rgba(255,255,255,0.1)');
+            gradient.addColorStop(0.4, 'rgba(255,255,255,0.05)');
+            gradient.addColorStop(1, 'rgba(0,0,0,0)');
+
+            ctx.fillStyle = gradient;
+            ctx.fillRect(0, 0, size, size);
+
+            const texture = new THREE.CanvasTexture(canvas);
+            texture.needsUpdate = true;
+            return texture;
+        }
+
+        // --- NEW: Soft Glow Ring Generator (Replaces GlowingDashDotRing) ---
+        function createSoftGlowRing(group, radius, color) {
+            const canvas = document.createElement('canvas');
+            canvas.width = 128;
+            canvas.height = 64;
+            const ctx = canvas.getContext('2d');
+
+            // Clear canvas
+            ctx.clearRect(0, 0, 128, 64);
+
+            // Create a soft gradient from center outward vertically
+            // This makes the "line" cross-section soft
+            const gradient = ctx.createLinearGradient(0, 0, 0, 64);
+            gradient.addColorStop(0, 'rgba(255, 255, 255, 0)');
+            gradient.addColorStop(0.2, 'rgba(255, 255, 255, 0.1)');
+            gradient.addColorStop(0.5, 'rgba(255, 255, 255, 0.8)'); // Bright core
+            gradient.addColorStop(0.8, 'rgba(255, 255, 255, 0.1)');
+            gradient.addColorStop(1, 'rgba(255, 255, 255, 0)');
+
+            ctx.fillStyle = gradient;
+            ctx.fillRect(0, 0, 128, 64);
+
+            const texture = new THREE.CanvasTexture(canvas);
+            texture.needsUpdate = true;
+
+            // Wider geometry to hold the soft texture (was 1.0, now 6.0)
+            const width = 6.0;
+            const geometry = new THREE.RingGeometry(radius - width / 2, radius + width / 2, 256);
+
+            // Map UVs to sample the vertical gradient radially
+            const uvs = geometry.attributes.uv;
+            const pos = geometry.attributes.position;
+            for (let i = 0; i < pos.count; i++) {
+                const x = pos.getX(i);
+                const y = pos.getY(i);
+                const r = Math.sqrt(x * x + y * y);
+                // Map v from 0 (inner) to 1 (outer) based on ring width
+                const v = (r - (radius - width / 2)) / width;
+                uvs.setXY(i, 0.5, v);
+            }
+            geometry.attributes.uv.needsUpdate = true;
+
+            const material = new THREE.MeshBasicMaterial({
+                map: texture,
+                color: color,
+                transparent: true,
+                opacity: 0.8,
+                side: THREE.DoubleSide,
+                blending: THREE.AdditiveBlending,
+                depthWrite: false
+            });
+
+            const mesh = new THREE.Mesh(geometry, material);
+            mesh.rotation.x = -Math.PI / 2;
+            mesh.position.y = 0.0;
+
+            group.add(mesh);
+        }
+
+        // --- Helper Functions ---
+
+        function createCurvedLabel(text, radius, width, colorString, glowColor, forcedRepeats) {
+            // --- CONSTANT TEXT SIZE LOGIC ---  
+            const TARGET_WORLD_HEIGHT = 2.8; // Base height multiplier
+
+            // Custom multiplier for very wide layers to make text proportionally larger
+            let sizeMultiplier = 1.0;
+            if (text === "OUTWARD INFINITY") {
+                // Increased size for the huge 200-unit layer
+                sizeMultiplier = 6.0;
+            }
+
+            const h = 512;
+            const fontSizePx = Math.floor((TARGET_WORLD_HEIGHT * sizeMultiplier / width) * h);
+
+            const ringWidth = width;
+            const circumference = 2 * Math.PI * radius;
+            const aspect = circumference / ringWidth;
+            let w = h * aspect;
+
+            const maxW = 4096;
+            let scaleX = 1;
+
+            if (w > maxW) {
+                scaleX = maxW / w;
+                w = maxW;
+            }
+
+            const canvas = document.createElement('canvas');
+            canvas.width = Math.floor(w);
+            canvas.height = h;
+            const ctx = canvas.getContext('2d');
+
+            // *** FIX: Clear the canvas completely before drawing ***
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            ctx.fillStyle = colorString;
+            ctx.font = '700 ' + fontSizePx + 'px "Antonio", sans-serif';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+
+            // --- FIX: Only apply glow if glowColor is explicitly set ---
+            if (glowColor && text !== "OUTWARD INFINITY") {
+                ctx.shadowColor = glowColor;
+                ctx.shadowBlur = fontSizePx * 0.15;
+            } else if (text === "OUTWARD INFINITY") {
+                // Apply standard, subtle shadow for readability without bloom
+                ctx.shadowColor = 'rgba(0,0,0,0.8)';
+                ctx.shadowBlur = fontSizePx * 0.05;
+            } else {
+                // Default solid color setup
+                ctx.shadowColor = 'rgba(0,0,0,0.8)';
+                ctx.shadowBlur = fontSizePx * 0.05;
+            }
+
+            const textMetrics = ctx.measureText(text);
+            const textWidth = textMetrics.width;
+
+            const totalPhysicalWidth = w / scaleX;
+
+            // Apply Forced Repeats or default logic
+            let numRepeats;
+            if (forcedRepeats) {
+                numRepeats = forcedRepeats;
+            } else {
+                // Adjust factor slightly to increase spacing and prevent line break wrap artifacts
+                numRepeats = Math.max(1, Math.floor(totalPhysicalWidth / (textWidth * 1.75)));
+            }
+
+            for (let i = 0; i < numRepeats; i++) {
+                const segW = w / numRepeats;
+                const x = (segW * i) + (segW / 2);
+
+                ctx.save();
+                ctx.translate(x, h / 2);
+                ctx.scale(scaleX * 0.8, 1.3); // Scale factor 0.8 to reduce horizontal stretch/overlap
+                ctx.fillText(text, 0, 0);
+                ctx.restore();
+            }
+
+            const texture = new THREE.CanvasTexture(canvas);
+            texture.anisotropy = 16;
+            texture.needsUpdate = true;
+
+            const geometry = new THREE.RingGeometry(radius - width / 2, radius + width / 2, 128, 1);
+            const uvs = geometry.attributes.uv;
+            const pos = geometry.attributes.position;
+
+            for (let i = 0; i < pos.count; i++) {
+                const x = pos.getX(i);
+                const y = pos.getY(i);
+                const angle = Math.atan2(y, x);
+                let u = (angle / (Math.PI * 2)) + 0.5;
+                let len = Math.sqrt(x * x + y * y);
+                let v_ring = (len - (radius - width / 2)) / width;
+                let v = 1.0 - v_ring;
+                uvs.setXY(i, u, v);
+            }
+
+            const material = new THREE.MeshBasicMaterial({
+                map: texture,
+                transparent: true,
+                opacity: 1,
+                side: THREE.DoubleSide,
+                depthTest: false,
+                depthWrite: false
+            });
+
+            const mesh = new THREE.Mesh(geometry, material);
+            mesh.rotation.x = -Math.PI / 2;
+            mesh.rotation.z = -Math.PI / 2;
+            mesh.position.y = 0.1;
+
+            return mesh;
+        }
+
+        // --- Function to Create Billboard Label for Sun ---
+        function createFloatingLabel(text, yPos, color) {
+            const canvas = document.createElement('canvas');
+            // Increased canvas size to prevent horizontal clipping of long text
+            const width = 1024;
+            const height = 256;
+            canvas.width = width;
+            canvas.height = height;
+            const ctx = canvas.getContext('2d');
+
+            ctx.fillStyle = color;
+            // Maintained font size but on larger canvas for crisp text
+            ctx.font = '700 80px "Antonio", sans-serif';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+
+            // Glow Effect
+            ctx.shadowColor = color;
+            ctx.shadowBlur = 20;
+
+            // Centered on the new larger canvas
+            ctx.fillText(text, width / 2, height / 2);
+
+            const texture = new THREE.CanvasTexture(canvas);
+            texture.needsUpdate = true;
+
+            const material = new THREE.SpriteMaterial({
+                map: texture,
+                transparent: true,
+                depthTest: false, // CRITICAL FIX: Always render on top
+                depthWrite: false // Don't write to depth buffer
+            });
+
+            const sprite = new THREE.Sprite(material);
+            // Scaled up for better visibility when positioned lower
+            // Aspect ratio (4:1) matches canvas dimensions (1024:256)
+            sprite.scale.set(22.5, 5.625, 1);
+            sprite.position.y = yPos;
+            // Ensure render order is high so it draws last (on top of sun glow)
+            sprite.renderOrder = 999;
+
+            return sprite;
+        }
+
+        // --- Starfield Generator ---
+        function createStarfield(count, size, range) {
+            const starGeo = new THREE.BufferGeometry();
+            const starPos = new Float32Array(count * 3);
+            for (let i = 0; i < count; i++) {
+                const r = range + Math.random() * range;
+                const theta = Math.random() * Math.PI * 2;
+                const phi = Math.acos(2 * Math.random() - 1);
+                starPos[i * 3] = r * Math.sin(phi) * Math.cos(theta);
+                starPos[i * 3 + 1] = r * Math.sin(phi) * Math.sin(theta);
+                starPos[i * 3 + 2] = r * Math.cos(phi);
+            }
+            starGeo.setAttribute('position', new THREE.BufferAttribute(starPos, 3));
+
+            // FIX: Use the circular asteroid texture for the starfield
+            const starMat = new THREE.PointsMaterial({
+                color: 0xffffff,
+                size: size,
+                transparent: true,
+                opacity: 0.8,
+                map: asteroidTexture, // Apply the circular texture
+                alphaTest: 0.1
+            });
+            return new THREE.Points(starGeo, starMat);
+        }
+
+        // --- Layer Data Definition (Remains unchanged for structure, data updated above) ---
+        const LAYERS = [
+            {
+                name: "CONTRACTS LAYER",
+                type: 'solid',
+                realThickness: 5,
+                gradientStops: [
+                    { offset: 0.0, color: "#4E7490" }, { offset: 0.2, color: "#4B6B8F" }, { offset: 0.4, color: "#47628E" },
+                    { offset: 0.6, color: "#44588D" }, { offset: 0.8, color: "#414F8C" }, { offset: 1.0, color: "#3E468C" }
+                ],
+                labelColor: "#ffffff", glossiness: 0.2, repeatCount: 2
+            },
+            {
+                name: "PLATFORM LAYER",
+                type: 'solid',
+                realThickness: 10,
+                gradientStops: [
+                    { offset: 0.00, color: "#6DEBC4" }, { offset: 0.20, color: "#5BC6A7" }, { offset: 0.40, color: "#4CA78F" },
+                    { offset: 0.60, color: "#3D8874" }, { offset: 0.80, color: "#317262" }, { offset: 1.00, color: "#296255" }
+                ],
+                labelColor: "#FF00FF", textGlow: "#FF00FF", glossiness: 0.1
+            },
+            {
+                name: "PRODUCT LAYER",
+                type: 'solid',
+                realThickness: 15,
+                gradientStops: [
+                    { offset: 0.00, color: "#4A8467" }, { offset: 0.20, color: "#4C835E" }, { offset: 0.40, color: "#4D8256" },
+                    { offset: 0.60, color: "#4F804D" }, { offset: 0.80, color: "#527F46" }, { offset: 1.00, color: "#537D3D" }
+                ],
+                labelColor: "#ffffff", glossiness: 0.1
+            },
+            { name: "AMPLIFYING LAYER", type: 'solid', realThickness: 5, color: 0xFFF200, labelColor: "#000000", glossiness: 0.1 },
+            {
+                name: "LIABILITIES LAYER",
+                type: 'solid',
+                realThickness: 5,
+                gradientStops: [
+                    { offset: 0.00, color: "#917348" }, { offset: 0.20, color: "#8F6446" }, { offset: 0.40, color: "#8B5342" },
+                    { offset: 0.60, color: "#894440" }, { offset: 0.80, color: "#86353E" }, { offset: 1.00, color: "#85283C" }
+                ],
+                labelColor: "#ffffff", glossiness: 0.1
+            },
+            {
+                name: "BUSINESS LAYER",
+                type: 'solid',
+                realThickness: 50,
+                gradientStops: [
+                    { offset: 0.0, color: "#4E7490" }, { offset: 0.2, color: "#4B6B8F" }, { offset: 0.4, color: "#47628E" },
+                    { offset: 0.6, color: "#44588D" }, { offset: 0.8, color: "#414F8C" }, { offset: 1.0, color: "#3E468C" }
+                ],
+                labelColor: "#ffffff", glossiness: 0.2
+            },
+            {
+                name: "CONSUMER LAYER",
+                type: 'halo',
+                realThickness: 30,
+                color: 0x00FFFF,
+                labelColor: "#00FFFF",
+                style: 'nebula-asteroids',
+                particleCount: 35000
+            },
+            // Renamed Layer
+            {
+                name: "Total Addressable Market (TAM)",
+                type: 'halo',
+                realThickness: 60,
+                color: 0x00FFAA,
+                labelColor: "#00FFAA",
+                style: 'dotted',
+                particleCount: 25000
+            },
+            {
+                name: "OUTWARD INFINITY",
+                type: 'halo',
+                realThickness: 200,
+                color: 0x808080,
+                labelColor: "#FFFFFF",
+                // Removed textGlow property for simple font
+                style: 'dotted',
+                particleCount: 62500
+            }
+        ];
+
+        // --- State for Animation (Remains unchanged) ---
+        const VIEW_STATE = {
+            isRealView: false,
+            transitionProgress: 0,
+            isTransitioning: false,
+            targetThicknesses: [],
+            currentThicknesses: []
+        };
+
+        // Initialize thicknesses (Remains unchanged)
+        LAYERS.forEach(l => {
+            // Smart Init: Solid = Concept (5), Halo = Real (Full size)
+            const initialT = l.type === 'solid' ? APP_CONFIG.defaultThickness : l.realThickness;
+            VIEW_STATE.currentThicknesses.push(initialT);
+            VIEW_STATE.targetThicknesses.push(initialT);
+        });
+
+        // --- Scene Setup (Remains unchanged) ---
+        const scene = new THREE.Scene();
+
+        // FIX: Set explicit scene background and match fog color to ensure uniformity
+        // This replaces reliance on transparent canvas + CSS background
+        const bgColor = new THREE.Color(0x02020a);
+        scene.background = bgColor;
+        scene.fog = new THREE.FogExp2(0x02020a, 0.002);
+
+        const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
+        const initialCamPos = new THREE.Vector3(0, 150, 200);
+        camera.position.copy(initialCamPos);
+
+        // FIX: Disable alpha (transparency) to prevent color mismatch with CSS
+        const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(window.devicePixelRatio);
+        renderer.toneMapping = THREE.ACESFilmicToneMapping;
+        renderer.toneMappingExposure = 1.0;
+        renderer.outputEncoding = THREE.sRGBEncoding;
+        document.getElementById('canvas-container').appendChild(renderer.domElement);
+
+        const controls = new THREE.OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
+        controls.dampingFactor = 0.05;
+        controls.minDistance = 20;
+        controls.maxDistance = 600;
+        controls.maxPolarAngle = Math.PI / 1.5;
+        controls.enablePan = true;
+        controls.screenSpacePanning = true;
+        controls.listenToKeyEvents(window);
+
+        // --- Post Processing (BLOOM) (Corrected URLs) ---
+        const renderScene = new THREE.RenderPass(scene, camera);
+
+        const bloomPass = new THREE.UnrealBloomPass(new THREE.Vector2(window.innerWidth, window.innerHeight), 1.5, 0.4, 0.85);
+        bloomPass.threshold = 0.9;
+        bloomPass.strength = 0.6;
+        bloomPass.radius = 0.5;
+
+        const composer = new THREE.EffectComposer(renderer);
+        composer.addPass(renderScene);
+        composer.addPass(bloomPass);
+
+        // --- Lighting (Remains unchanged) ---
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+        scene.add(ambientLight);
+
+        const topLight = new THREE.DirectionalLight(0xffffff, 0.5);
+        topLight.position.set(0, 50, 0);
+        scene.add(topLight);
+
+        const bottomLight = new THREE.DirectionalLight(0xffffff, 0.5);
+        bottomLight.position.set(0, -50, 0);
+        scene.add(bottomLight);
+
+        const sunLight = new THREE.PointLight(0xffaa00, 1.5, 300);
+        sunLight.position.set(0, 5, 0);
+        scene.add(sunLight);
+
+        const blueLight = new THREE.PointLight(0x3498db, 0.8, 300);
+        blueLight.position.set(60, 30, 60);
+        scene.add(blueLight);
+
+        const purpleLight = new THREE.PointLight(0x9b59b6, 0.8, 300);
+        purpleLight.position.set(-60, -30, -60);
+        scene.add(purpleLight);
+
+        // --- Build The Scene Objects (Remains unchanged) ---
+        const sunGeo = new THREE.SphereGeometry(APP_CONFIG.coreRadius, 64, 64);
+        const sunUniforms = { time: { value: 1.0 } };
+        const sunMat = new THREE.ShaderMaterial({
+            uniforms: sunUniforms,
+            vertexShader: document.getElementById('sun-vertex').textContent,
+            fragmentShader: document.getElementById('sun-fragment').textContent,
+            side: THREE.DoubleSide
+        });
+        const sun = new THREE.Mesh(sunGeo, sunMat);
+        scene.add(sun);
+
+        // Floating Label for Source of Energy
+        // Position reduced by half to bring it closer to the core.
+        const sunLabel = createFloatingLabel("Source of Energy", 5, "#ffaa00");
+        scene.add(sunLabel);
+
+        // --- ENHANCED SUN GLOW (Remains unchanged) ---
+
+        // 1. Hard Halo (Inner Corona)
+        const haloTexture = createSunHaloTexture();
+        const haloMaterial = new THREE.SpriteMaterial({
+            map: haloTexture,
+            color: 0xffffff,
+            transparent: true,
+            opacity: 0.9,
+            blending: THREE.AdditiveBlending,
+            depthWrite: false
+        });
+        const sunHalo = new THREE.Sprite(haloMaterial);
+        // Scale calibrated for core radius of 4
+        sunHalo.scale.set(APP_CONFIG.coreRadius * 5, APP_CONFIG.coreRadius * 5, 1);
+        scene.add(sunHalo);
+
+        // 2. Soft Ambient Glow (Outer Bloom)
+        const softGlowTexture = createGlowTexture('#ffaa00', 0.1);
+        const softGlowMat = new THREE.SpriteMaterial({
+            map: softGlowTexture,
+            color: 0xff4400,
+            transparent: true,
+            opacity: 0.6,
+            blending: THREE.AdditiveBlending,
+            depthWrite: false
+        });
+        const sunAmbient = new THREE.Sprite(softGlowMat);
+        sunAmbient.scale.set(APP_CONFIG.coreRadius * 15, APP_CONFIG.coreRadius * 15, 1);
+        scene.add(sunAmbient);
+
+        // Initialize Layers with DEFAULT Thickness (Remains unchanged)
+        const clickTargets = [];
+
+        // Generate Asteroid Texture Once
+        const asteroidTexture = createAsteroidTexture();
+
+        LAYERS.forEach((layer, index) => {
+            const layerGroup = new THREE.Group();
+            // Initial thickness depends on type (Solid=5, Halo=Real)
+            const thisLayerThickness = VIEW_STATE.currentThicknesses[index];
+
+            layerGroup.userData = {
+                layerIndex: index,
+                isSolid: layer.type === 'solid',
+                rotSpeed: (Math.random() - 0.5) * 0.002,
+            };
+
+            if (layer.type === 'solid') {
+                // FIX: Increased radial segments for smoother rings
+                const geometry = new THREE.RingGeometry(1, 2, APP_CONFIG.segmentCount, 16);
+                let material;
+                if (layer.gradientStops) {
+                    const texture = createGradientTexture(layer.gradientStops);
+                    material = new THREE.MeshPhysicalMaterial({ map: texture, metalness: 0.1, roughness: 0.5, clearcoat: layer.glossiness, clearcoatRoughness: 0.5, side: THREE.DoubleSide });
+                } else {
+                    material = new THREE.MeshPhysicalMaterial({ color: layer.color, metalness: 0.1, roughness: 0.5, clearcoat: layer.glossiness, clearcoatRoughness: 0.5, side: THREE.DoubleSide });
+                }
+                const mesh = new THREE.Mesh(geometry, material);
+                mesh.rotation.x = -Math.PI / 2;
+                mesh.userData = { layerName: layer.name, type: 'layer' };
+                mesh.name = "solidRing";
+                layerGroup.add(mesh);
+                clickTargets.push(mesh);
+
+                const textMesh = createCurvedLabel(layer.name, 10, thisLayerThickness, layer.labelColor, layer.textGlow, layer.repeatCount);
+                textMesh.name = "textMesh";
+                layerGroup.add(textMesh);
+
+            } else if (layer.type === 'halo') {
+                const hitGeo = new THREE.RingGeometry(1, 2, 64);
+                const hitMat = new THREE.MeshBasicMaterial({ visible: false, side: THREE.DoubleSide });
+                const hitMesh = new THREE.Mesh(hitGeo, hitMat);
+                hitMesh.rotation.x = -Math.PI / 2;
+                hitMesh.userData = { layerName: layer.name, type: 'layer' };
+                hitMesh.name = "hitPlane";
+                layerGroup.add(hitMesh);
+                clickTargets.push(hitMesh);
+
+                if (layer.style === 'nebula-asteroids' || layer.style === 'dotted') {
+                    // Initialize particle buffer with Configured Count
+                    const count = layer.particleCount || 10000;
+
+                    const pGeo = new THREE.BufferGeometry();
+                    const positions = new Float32Array(count * 3);
+                    const colors = new Float32Array(count * 3);
+
+                    // FIX: Define baseCol here for particle set 1/2
+                    const baseCol = new THREE.Color(layer.color);
+
+
+                    // Custom attributes for animation
+                    const angles = new Float32Array(count);
+                    const radiiNorm = new Float32Array(count); // 0 to 1 within the band
+                    const heights = new Float32Array(count); // Y offset
+
+                    for (let k = 0; k < count; k++) {
+                        const theta = (k / count) * Math.PI * 2 * 20 + Math.random();
+                        const rNorm = Math.random(); // 0 to 1
+                        const h = (Math.random() * 2 - 1); // -1 to 1 scale later
+
+                        angles[k] = theta;
+                        radiiNorm[k] = rNorm;
+                        heights[k] = h;
+
+                        // Initial placement placeholder (will be overwritten by updateLayout)
+                        positions[k * 3] = 0;
+                        positions[k * 3 + 1] = 0;
+                        positions[k * 3 + 2] = 0;
+
+                        const variation = Math.random() * 0.4 - 0.2;
+                        colors[k * 3] = Math.max(0, Math.min(1, baseCol.r + variation));
+                        colors[k * 3 + 1] = Math.max(0, Math.min(1, baseCol.g + variation));
+                        colors[k * 3 + 2] = Math.max(0, Math.min(1, baseCol.b + variation));
+                    }
+
+                    pGeo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+                    pGeo.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+
+                    // Save our custom data to the geometry for easy access in update loop
+                    pGeo.userData = { angles, radiiNorm, heights, count };
+
+                    // Determine Point Size and Material
+                    let pMat;
+
+                    if (layer.style === 'nebula-asteroids') {
+                        // Bigger Core (0.4) for stronger neon presence
+                        const glowTexture = createGlowTexture(layer.color, 0.4);
+                        pMat = new THREE.PointsMaterial({
+                            size: 0.5, // FIX: size matched to 0.5
+                            map: glowTexture,
+                            vertexColors: false,
+                            color: 0xFFFFFF,
+                            transparent: true,
+                            opacity: 1.0,
+                            depthWrite: false,
+                            blending: THREE.AdditiveBlending
+                        });
+                    } else {
+                        // For 'dotted' layers (TAM & Infinity), use CIRCULAR texture
+                        pMat = new THREE.PointsMaterial({
+                            size: 0.5,
+                            map: asteroidTexture, // Apply circular texture here
+                            vertexColors: true,
+                            transparent: true,
+                            opacity: 0.8,
+                            blending: THREE.NormalBlending,
+                            alphaTest: 0.1
+                        });
+                    }
+
+                    const points = new THREE.Points(pGeo, pMat);
+                    points.name = "particles";
+                    layerGroup.add(points);
+
+                    if (layer.style === 'nebula-asteroids') {
+                        // Increase density for better visual
+                        const cCount = 2000;
+                        const cGeo = new THREE.BufferGeometry();
+                        const cPos = new Float32Array(cCount * 3);
+                        const cColors = new Float32Array(cCount * 3); // NEW: Vertex Colors
+                        const cAngles = new Float32Array(cCount);
+                        const cRadiiNorm = new Float32Array(cCount);
+
+
+
+                        for (let k = 0; k < cCount; k++) {
+                            const theta = Math.random() * Math.PI * 2;
+                            const rNorm = Math.random();
+                            cAngles[k] = theta;
+                            cRadiiNorm[k] = rNorm;
+                            cPos[k * 3] = 0; cPos[k * 3 + 1] = 0; cPos[k * 3 + 2] = 0;
+
+                            // FIX: Use the globally defined NEBULA_COLORS
+                            const nebulaCol = NEBULA_COLORS[Math.floor(Math.random() * NEBULA_COLORS.length)];
+                            cColors[k * 3] = Math.max(0, Math.min(1, nebulaCol.r + (Math.random() * 0.1 - 0.05)));
+                            cColors[k * 3 + 1] = Math.max(0, Math.min(1, nebulaCol.g + (Math.random() * 0.1 - 0.05)));
+                            cColors[k * 3 + 2] = Math.max(0, Math.min(1, nebulaCol.b + (Math.random() * 0.1 - 0.05)));
+                        }
+
+                        cGeo.setAttribute('position', new THREE.BufferAttribute(cPos, 3));
+                        cGeo.setAttribute('color', new THREE.BufferAttribute(cColors, 3)); // Set color attribute
+                        cGeo.userData = { angles: cAngles, radiiNorm: cRadiiNorm, count: cCount };
+
+                        const cMat = new THREE.PointsMaterial({
+                            size: 25, // Larger puff size for nebula effect
+                            map: createCloudTexture(),
+                            transparent: true,
+                            opacity: 0.15,
+                            blending: THREE.AdditiveBlending,
+                            vertexColors: true, // Enable multi-color
+                            depthWrite: false
+                        });
+
+                        const clouds = new THREE.Points(cGeo, cMat);
+                        clouds.name = "clouds";
+                        layerGroup.add(clouds);
+                    }
+
+                    if (layer.name === "Total Addressable Market (TAM)") {
+                        const dashGroup = new THREE.Group();
+                        dashGroup.name = "dashGroup";
+                        layerGroup.add(dashGroup);
+                    }
+                }
+
+                const textMesh = createCurvedLabel(layer.name, 10, thisLayerThickness, layer.labelColor, layer.textGlow, layer.repeatCount);
+                textMesh.name = "textMesh";
+                layerGroup.add(textMesh);
+            }
+
+            scene.add(layerGroup);
+            layerGroups.push(layerGroup);
+        });
+
+        // Add the space stars using the updated Starfield function
+        scene.add(createStarfield(1500, 0.4, 150));
+        scene.add(createStarfield(500, 0.8, 100));
+
+        // --- UPDATE LOGIC (Called every frame during transition or init) ---
+        function updateLayout() {
+            let currentR = APP_CONFIG.coreRadius + APP_CONFIG.gapSize;
+
+            layerGroups.forEach((group, i) => {
+                const thickness = VIEW_STATE.currentThicknesses[i];
+                const layerConfig = LAYERS[i];
+
+                const innerR = currentR;
+                const outerR = currentR + thickness;
+                const centerR = currentR + thickness / 2;
+
+                // 1. Update Solid Ring Geometry
+                const ringMesh = group.getObjectByName("solidRing");
+                if (ringMesh) {
+                    ringMesh.geometry.dispose();
+                    // FIX: Increased radial segments for smoother rings
+                    ringMesh.geometry = new THREE.RingGeometry(innerR, outerR, APP_CONFIG.segmentCount, 16);
+
+                    // Fix UVs for Gradient
+                    if (layerConfig.gradientStops) {
+                        const pos = ringMesh.geometry.attributes.position;
+                        const uvs = ringMesh.geometry.attributes.uv;
+                        for (let j = 0; j < pos.count; j++) {
+                            const x = pos.getX(j);
+                            const y = pos.getY(j);
+                            const r = Math.sqrt(x * x + y * y);
+                            const u = (r - innerR) / (outerR - innerR);
+                            uvs.setXY(j, u, 0);
+                        }
+                        ringMesh.geometry.attributes.uv.needsUpdate = true;
+                    }
+                }
+
+                // 2. Update Hit Plane Geometry
+                const hitMesh = group.getObjectByName("hitPlane");
+                if (hitMesh) {
+                    hitMesh.geometry.dispose();
+                    hitMesh.geometry = new THREE.RingGeometry(innerR, outerR, 64);
+                }
+
+                // 3. Update Particles (STABLE)
+                const particles = group.getObjectByName("particles");
+                if (particles) {
+                    const geo = particles.geometry;
+                    const posAttr = geo.attributes.position;
+                    const { angles, radiiNorm, heights, count } = geo.userData;
+
+                    // Height scale increases with thickness for volume
+                    const heightScale = thickness > 50 ? 3.5 : 1.5;
+
+                    for (let k = 0; k < count; k++) {
+                        const r = innerR + (radiiNorm[k] * thickness); // Stable mapping
+                        const theta = angles[k];
+                        const y = heights[k] * heightScale;
+
+                        posAttr.setXYZ(k, Math.cos(theta) * r, y, Math.sin(theta) * r);
+                    }
+                    posAttr.needsUpdate = true;
+                }
+
+                // 4. Update Clouds (STABLE)
+                const clouds = group.getObjectByName("clouds");
+                if (clouds) {
+                    const geo = clouds.geometry;
+                    const posAttr = geo.attributes.position;
+                    const { angles, radiiNorm, count } = geo.userData;
+
+                    for (let k = 0; k < count; k++) {
+                        const r = innerR + (radiiNorm[k] * thickness);
+                        const theta = angles[k];
+                        // Clouds have more vertical spread
+                        // Use pseudo-random based on index for stability
+                        const y = Math.sin(k) * 3.0;
+
+                        posAttr.setXYZ(k, Math.cos(theta) * r, y, Math.sin(theta) * r);
+                    }
+                    posAttr.needsUpdate = true;
+                }
+
+                // 5. Update Dash Ring (Max Consumer / TAM)
+                const dashGroup = group.getObjectByName("dashGroup");
+                if (dashGroup) {
+                    dashGroup.clear(); // Remove old rings
+                    // The dash ring should be placed at the outer edge of this layer
+                    createSoftGlowRing(dashGroup, outerR, 0x00FFFF);
+                }
+
+                // 6. Update Text Label
+                // We remove old and create new to ensure correct curvature and centering
+                const oldText = group.getObjectByName("textMesh");
+                if (oldText) oldText.geometry.dispose(); // Dispose old geometry to prevent memory leak
+                if (oldText) oldText.material.dispose(); // Dispose old material
+                if (oldText) group.remove(oldText);
+
+                const newText = createCurvedLabel(layerConfig.name, centerR, thickness, layerConfig.labelColor, layerConfig.textGlow, layerConfig.repeatCount);
+                newText.name = "textMesh";
+                group.add(newText);
+
+                // Advance Radius
+                currentR += thickness;
+            });
+        }
+
+        // Initial Render
+        updateLayout();
+
+
+        // --- INTERACTION ---
+        const raycaster = new THREE.Raycaster();
+        const mouse = new THREE.Vector2();
+        let currentSelectedLayer = null;
+
+        window.addEventListener('click', onMouseClick, false);
+
+        function onMouseClick(event) {
+            if (event.target.closest('#ai-panel') || event.target.closest('#controls-area') || event.target.closest('header')) return;
+
+            mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+            mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+
+            raycaster.setFromCamera(mouse, camera);
+            const intersects = raycaster.intersectObjects(clickTargets);
+
+            if (intersects.length > 0) {
+                const hit = intersects[0].object;
+                if (hit.userData.type === 'layer') {
+                    openPanel(hit.userData.layerName);
+                }
+            }
+        }
+
+        // --- UI & LOGIC ---
+        const aiPanel = document.getElementById('ai-panel');
+        const panelTitle = document.getElementById('panel-title');
+        const healthBadge = document.getElementById('health-badge');
+        const metricsView = document.getElementById('metrics-view');
+        const dataVisualContainer = document.getElementById('data-visual-container');
+        const metricsArea = document.getElementById('metrics-area');
+        const infoContent = document.getElementById('layer-info-content');
+        const contextInput = document.getElementById('ai-context-input');
+        const outputDiv = document.getElementById('ai-output');
+        const graphBtn = document.getElementById('graph-btn');
+        const timelineBtn = document.getElementById('timeline-btn');
+
+        // FIX: Move toggleBtn declaration to this block so it is definitely initialized.
+        const toggleBtn = document.getElementById('toggle-view-btn');
+
+        let activeCharts = []; // Global array to hold Chart instances
+
+        // NEW: Function to reset the AI output display area
+        function initializeAiOutput() {
+            outputDiv.innerHTML = `<p style="font-style: italic; color: #aaa;">Click '✨ Insights' or '🎲 Simulate' above to engage the AI Advisor.</p>`;
+        }
+
+        // NEW: Function to clear AI output and return to default state
+        function clearAiOutput() {
+            // Scroll to the top of the AI input section for a clean reset view
+            contextInput.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            initializeAiOutput();
+        }
+
+
+        function renderDataView(viewName) {
+            // Clear old charts
+            activeCharts.forEach(chart => chart.destroy());
+            activeCharts = [];
+
+            // Hide metrics and info, show data visual container
+            metricsView.style.display = 'none';
+            infoContent.style.display = 'none';
+            dataVisualContainer.style.display = 'flex';
+            dataVisualContainer.innerHTML = '';
+
+            // Update button active state
+            graphBtn.classList.remove('active-view');
+            timelineBtn.classList.remove('active-view');
+
+            if (viewName === 'graphs') {
+                showGraphView();
+                graphBtn.classList.add('active-view');
+            } else if (viewName === 'timeline') {
+                showTimelineView();
+                timelineBtn.classList.add('active-view');
+            } else {
+                // Default view (metrics)
+                metricsView.style.display = 'block';
+                dataVisualContainer.style.display = 'none';
+            }
+        }
+
+        function openPanel(layerName) {
+            currentSelectedLayer = layerName;
+            panelTitle.innerText = layerName;
+
+            // Reset to default metrics view
+            renderDataView('metrics');
+
+            // Fetch Data
+            const data = LAYER_DATA[layerName] || LAYER_DATA["default"];
+
+            // Update Health Badge
+            healthBadge.innerText = data.health;
+            healthBadge.className = `health-badge ${data.healthClass}`;
+
+            // Render Metrics
+            metricsArea.innerHTML = data.metrics.map(m => {
+                // Determine status color based on metric status string
+                let statusColor;
+                if (m.status === 'good') {
+                    statusColor = '#2ecc71';
+                } else if (m.status === 'risk') {
+                    statusColor = '#f1c40f';
+                } else {
+                    statusColor = '#e74c3c';
+                }
+
+                return `
+                    <div class="metric-card">
+                        <div class="metric-name">
+                            ${m.name}
+                            <div class="metric-status-dot" style="background-color: ${statusColor}"></div>
+                        </div>
+                        <div class="metric-values">
+                            <div class="current-val">${m.current}${m.unit === '%' ? '%' : ''}</div>
+                            <div class="target-val">Target: ${m.unit === '$' ? '<' : ''}${m.target}${m.unit === '%' ? '%' : ''}${m.unit === '$' ? '$' : ''}</div>
+                        </div>
+                    </div>`;
+            }).join('');
+
+            // Populate Info Content
+            // Use the inner text container, not the wrapper which contains the button
+            document.getElementById('layer-info-text').innerHTML = data.info;
+
+            // Use new initializer
+            initializeAiOutput();
+            aiPanel.classList.add('active');
+        }
+
+        function toggleInfo() {
+            // Toggle info display, ensuring metrics/data views are hidden
+            metricsView.style.display = 'none';
+            dataVisualContainer.style.display = 'none';
+
+            if (infoContent.style.display === 'none') {
+                infoContent.style.display = 'block';
+            } else {
+                // Back to metrics view if info is being closed
+                infoContent.style.display = 'none';
+                metricsView.style.display = 'block';
+            }
+
+            // Reset action buttons if we are toggling info
+            graphBtn.classList.remove('active-view');
+            timelineBtn.classList.remove('active-view');
+        }
+
+        // --- IMPLEMENTATION: View Graphs (d.) ---
+        function showGraphView() {
+            const data = LAYER_DATA[currentSelectedLayer] || LAYER_DATA["default"];
+            const history = data.mockHistory;
+            const labels = Array.from({ length: 10 }, (_, i) => `P${i + 1}`); // P1 to P10
+
+            if (dataVisualContainer.style.display === 'none') {
+                dataVisualContainer.style.display = 'flex';
+            }
+
+            // Create Tabs Container
+            const tabsContainer = document.createElement('div');
+            tabsContainer.className = 'chart-tabs';
+            dataVisualContainer.appendChild(tabsContainer);
+
+            // Create Chart Area
+            const chartArea = document.createElement('div');
+            chartArea.className = 'chart-wrapper';
+            // Create static Back button that stays with the chart
+            chartArea.innerHTML = `
+                    <button class="back-link" onclick="event.stopPropagation(); renderDataView('metrics')" style="margin-bottom:5px; font-size: 0.8rem;">← Back</button>
+                    <div class="chart-title" id="active-chart-title">Select a Metric</div>
+                    <div style="flex: 1; position: relative;">
+                        <canvas id="active-chart-canvas"></canvas>
+                    </div>
+                    `;
+            dataVisualContainer.appendChild(chartArea);
+
+            // Create Tabs and default chart
+            data.metrics.forEach((metric, index) => {
+                const btn = document.createElement('button');
+                btn.className = 'chart-tab-btn';
+                btn.innerText = metric.name;
+                btn.onclick = () => renderMetricChart(metric, btn);
+                tabsContainer.appendChild(btn);
+
+                // Render first metric by default
+                if (index === 0) {
+                    renderMetricChart(metric, btn);
+                }
+            });
+        }
+
+        function renderMetricChart(metric, activeBtn) {
+            const data = LAYER_DATA[currentSelectedLayer] || LAYER_DATA["default"];
+            const history = data.mockHistory;
+            const historyData = history[metric.name] || Array(10).fill(0); // Fallback
+            const labels = Array.from({ length: 10 }, (_, i) => `P${i + 1}`);
+
+            // Update Active State
+            document.querySelectorAll('.chart-tab-btn').forEach(b => b.classList.remove('active'));
+            activeBtn.classList.add('active');
+
+            // Update Title
+            document.getElementById('active-chart-title').innerText = `${metric.name} Trend`;
+
+            // Clear previous chart
+            if (activeCharts.length > 0) {
+                activeCharts[0].destroy();
+                activeCharts = [];
+            }
+
+            // Render New Chart
+            const ctx = document.getElementById('active-chart-canvas').getContext('2d');
+            const targetColor = metric.status === 'good' ? 'rgba(46, 204, 113, 1)' : 'rgba(231, 76, 60, 1)';
+
+            const newChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [
+                        {
+                            label: 'Actual',
+                            data: historyData,
+                            borderColor: '#00AEEF',
+                            backgroundColor: 'rgba(0, 174, 239, 0.2)',
+                            fill: true,
+                            tension: 0.3,
+                            pointRadius: 4,
+                            pointBackgroundColor: '#fff'
+                        },
+                        {
+                            label: 'Target',
+                            data: Array(labels.length).fill(metric.target),
+                            borderColor: targetColor,
+                            borderDash: [5, 5],
+                            pointRadius: 0,
+                            borderWidth: 1,
+                            tension: 0,
+                            fill: false
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        x: {
+                            ticks: { color: '#aaa', font: { size: 10 } },
+                            grid: { color: 'rgba(255,255,255,0.05)' }
+                        },
+                        y: {
+                            ticks: { color: '#aaa', font: { size: 10 } },
+                            grid: { color: 'rgba(255,255,255,0.05)' }
+                        }
+                    }
+                }
+            });
+            activeCharts.push(newChart);
+        }
+
+        // --- IMPLEMENTATION: Strategic Timeline (d.) ---
+        function showTimelineView() {
+            const data = LAYER_DATA[currentSelectedLayer] || LAYER_DATA["default"];
+            const events = data.timelineEvents;
+
+            let timelineHTML = `
+                    <button class="back-link" onclick="event.stopPropagation(); renderDataView('metrics')">← Back to Metrics</button>
+                    <div class="chart-title">Key Strategic Events (${currentSelectedLayer})</div>
+                    <div class="timeline-container">
+                        <div style="width: ${events.length * 200}px; position: relative;">
+                            <div class="timeline-bar"></div>
+                            ${events.map((event, index) => `
+                        <div class="timeline-event" style="left: ${index * 200}px;">
+                            <div class="event-dot" style="background-color: ${index === events.length - 1 ? '#e74c3c' : '#fff'}"></div>
+                            <div class="event-label">${event.label}</div>
+                            <div class="event-date">${event.date}</div>
+                        </div>
+                    `).join('')}
+                        </div>
+                    </div>
+                    <p style="color: #aaa; font-size: 0.85rem; margin-top: 10px;">**Note:** Timeline position is arbitrary mock data representing 5 key periods/quarters of activity.</p>
+                    `;
+
+            dataVisualContainer.innerHTML = timelineHTML;
+            dataVisualContainer.style.display = 'flex';
+        }
+
+        function closePanel() {
+            aiPanel.classList.remove('active');
+            // Clear charts when closing panel
+            activeCharts.forEach(chart => chart.destroy());
+            activeCharts = [];
+        }
+
+        function resetView() {
+            camera.position.copy(initialCamPos);
+            controls.target.set(0, 0, 0);
+            controls.update();
+        }
+
+        // --- TOGGLE VIEW ANIMATION LOGIC (Remains unchanged) ---
+        function toggleView() {
+            const isReal = !VIEW_STATE.isRealView;
+            VIEW_STATE.isRealView = isReal;
+
+            // Use the already initialized toggleBtn variable
+            toggleBtn.innerText = isReal ? "💡 Show Concept" : "👁 Show Real Org";
+
+            // Set Targets
+            LAYERS.forEach((layer, i) => {
+                // Only toggle Solid (Internal) layers. Halos stay constant.
+                if (layer.type === 'solid') {
+                    VIEW_STATE.targetThicknesses[i] = isReal ? layer.realThickness : APP_CONFIG.defaultThickness;
+                } else {
+                    VIEW_STATE.targetThicknesses[i] = layer.realThickness;
+                }
+            });
+
+            // Start Transition
+            VIEW_STATE.isTransitioning = true;
+            VIEW_STATE.startTime = performance.now();
+        }
+
+        function lerp(start, end, t) {
+            return start * (1 - t) + end * t;
+        }
+
+        function easeOutCubic(x) {
+            return 1 - Math.pow(1 - x, 3);
+        }
+
+        async function askGemini(mode = 'insights') {
+            const context = contextInput.value.trim();
+
+            const loadingSpinner = document.getElementById(mode === 'insights' ? 'loading-spinner-insights' : 'loading-spinner-scenario');
+            const buttonText = document.getElementById(mode === 'insights' ? 'btn-text-insights' : 'btn-text-scenario');
+            loadingSpinner.style.display = 'block';
+            const originalText = buttonText.innerText;
+            buttonText.innerText = "Thinking...";
+            outputDiv.innerHTML = "";
+
+            // TODO: Insert your Gemini API Key here
+            // API Key is now handled by Netlify Function
+            const useNetlifyFunction = true;
+
+            // Mock Data for Demo purposes if API key is missing
+            const mockResponse = mode === 'insights'
+                ? `### ✨ AI Insights (Demo Mode)
+
+                    **Analysis for ${currentSelectedLayer}:**
+                    This layer is currently showing **${LAYER_DATA[currentSelectedLayer]?.health || 'Unknown'}** health.
+
+                    **Opportunities (Power Ups):**
+                    *   **Optimize Efficiency:** There is a 15% potential gain in optimizing current workflows.
+                    *   **Cross-Layer Synergy:** Stronger alignment with the ${currentSelectedLayer === 'BUSINESS LAYER' ? 'Product Layer' : 'Business Layer'} could unlock new value.
+
+                    **Risks (Energy Leaks):**
+                    *   **Resource Fragmentation:** Current metrics suggest resources are spread too thin.
+                    *   **Communication Lag:** Data indicates a delay in feedback loops affecting decision speed.
+
+                    *Note: This is a simulated response because no API key was detected.*`
+                : `### 🎲 Simulation Scenario (Demo Mode)
+
+                    **Crisis: The "Silent Drift"**
+
+                    Unexpected market shifts have caused a 20% drop in engagement metrics for the **${currentSelectedLayer}**.
+
+                    **Challenge:**
+                    You have 48 hours to propose a reallocation of resources to stabilize the layer without compromising long-term projects.
+
+                    **Decision Point:**
+                    1.  Cut experimental initiatives?
+                    2.  Overwork the current team (Risk of burnout)?
+                    3.  Delay the roadmap?
+
+                    *Note: This is a simulated response because no API key was detected.*`;
+
+            try {
+                // If we are running locally without the function (e.g. just opening html file), we might want to fallback or warn.
+                // But assuming we are deploying or running via netlify dev.
+
+
+                let prompt = "";
+
+                // Get current layer data to feed to AI
+                const layerData = LAYER_DATA[currentSelectedLayer] || LAYER_DATA["default"];
+
+                // Format metrics for AI prompt
+                const metricsStr = layerData.metrics.map(m => {
+                    const targetPrefix = m.unit === '$' && m.inverse ? 'less than ' : '';
+                    const targetVal = `${targetPrefix}${m.target}${m.unit}`;
+                    const currentVal = `${m.current}${m.unit}`;
+                    return `${m.name}: ${currentVal} (Target ${targetVal}). Health: ${m.status}.`;
+                }).join(" ");
+
+                if (mode === 'insights') {
+                    prompt = `Strategic Advice for "${currentSelectedLayer}". 
+                 Layer Health: ${layerData.health}. 
+                 Metrics: ${metricsStr}.
+                 User Context: "${context}". 
+                 Analyze the layer's role in the organizational energy model. Provide Power Ups (opportunities) and Energy Leaks (risks). Concise markdown.`;
+                } else {
+                    prompt = `Simulation Scenario for "${currentSelectedLayer}". 
+                 Layer Health: ${layerData.health}. 
+                 User Context: "${context}". 
+                 Generate a plausible, challenging "What If" scenario or crisis that directly impacts this layer of the organization. The output should be a single, short, narrative challenge. Concise markdown.`;
+                }
+
+                // Implement exponential backoff for resilience
+                const MAX_RETRIES = 3;
+                let response = null;
+                let success = false;
+
+                for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
+                    try {
+                        response = await fetch('/.netlify/functions/get_insights', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ prompt: prompt })
+                        });
+                        if (response.ok) {
+                            success = true;
+                            break;
+                        } else {
+                            console.error("API Error:", response.status, response.statusText);
+                        }
+                    } catch (e) {
+                        console.error("Fetch Error:", e);
+                    }
+                    if (attempt < MAX_RETRIES - 1) {
+                        await new Promise(resolve => setTimeout(resolve, Math.pow(2, attempt) * 1000));
+                    }
+                }
+
+                if (!success || !response) throw new Error('API Request Failed after retries');
+
+                const data = await response.json();
+                const text = data.candidates?.[0]?.content?.parts?.[0]?.text || "No insights found. Try refining your organization context.";
+
+                // NEW: Add the back button HTML and parse the content
+                const backButtonHtml = `<button class="back-link" onclick="event.stopPropagation(); clearAiOutput()">← Clear AI Output</button>`;
+                outputDiv.innerHTML = backButtonHtml + marked.parse(text);
+
+            } catch (error) {
+                console.error("Final Error:", error);
+                outputDiv.innerHTML = `<p style='color: #ff6b6b'>Connection failed: ${error.message}. <br>Please check your network or API key.</p>`;
+            } finally {
+                loadingSpinner.style.display = 'none';
+                buttonText.innerText = originalText;
+                // Scroll to the top of the output to ensure the user sees the start of the result and the back button
+                outputDiv.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }
+        }
+
+        // --- Animation Loop ---
+        let time = 0;
+        function animate() {
+            requestAnimationFrame(animate);
+            time += 0.01;
+
+            // --- TRANSITION LOGIC ---
+            if (VIEW_STATE.isTransitioning) {
+                const now = performance.now();
+                const elapsed = (now - VIEW_STATE.startTime) / 1000; // seconds
+                const duration = 1.0; // 1 second transition
+
+                if (elapsed < duration) {
+                    const t = easeOutCubic(elapsed / duration);
+
+                    // Update thicknesses
+                    for (let i = 0; i < LAYERS.length; i++) {
+                        // Determine start thickness (based on whether we are moving from Concept to Real or vice-versa)
+                        const startT = VIEW_STATE.isRealView ?
+                            (LAYERS[i].type === 'solid' ? APP_CONFIG.defaultThickness : LAYERS[i].realThickness) :
+                            (LAYERS[i].type === 'solid' ? LAYERS[i].realThickness : LAYERS[i].realThickness);
+
+                        const endT = VIEW_STATE.targetThicknesses[i];
+                        VIEW_STATE.currentThicknesses[i] = lerp(startT, endT, t);
+                    }
+                    updateLayout();
+                } else {
+                    // Finish
+                    VIEW_STATE.isTransitioning = false;
+                    for (let i = 0; i < LAYERS.length; i++) {
+                        VIEW_STATE.currentThicknesses[i] = VIEW_STATE.targetThicknesses[i];
+                    }
+                    updateLayout();
+                }
+            }
+
+            // Standard rotation
+            sunUniforms.time.value = time;
+            sunLight.intensity = 2 + Math.sin(time * 2) * 0.5;
+            // Pulse the glow slightly for effect
+            sunHalo.material.opacity = 0.9 + Math.sin(time * 5) * 0.05;
+            sunAmbient.material.opacity = 0.6 + Math.sin(time * 2) * 0.1;
+
+            layerGroups.forEach(group => {
+                if (group.userData.rotSpeed) {
+                    group.rotation.y += group.userData.rotSpeed;
+                }
+            });
+
+            controls.update();
+            composer.render();
+        }
+
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            composer.setSize(window.innerWidth, window.innerHeight);
+        });
+
+        animate();
+
+    </script>
+</body>
+
+</html>
