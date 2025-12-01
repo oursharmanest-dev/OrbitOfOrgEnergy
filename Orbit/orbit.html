@@ -6,6 +6,15 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Orbit of Organizational Energy</title>
 
+    <!-- Microsoft Clarity -->
+    <script type="text/javascript">
+        (function (c, l, a, r, i, t, y) {
+            c[a] = c[a] || function () { (c[a].q = c[a].q || []).push(arguments) };
+            t = l.createElement(r); t.async = 1; t.src = "https://www.clarity.ms/tag/" + i;
+            y = l.getElementsByTagName(r)[0]; y.parentNode.insertBefore(t, y);
+        })(window, document, "clarity", "script", "uek7tcovn9");
+    </script>
+
     <!-- Import 'Antonio' font -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -1416,23 +1425,29 @@
             }
 
             const h = 512;
+            // Calculate font size based on world height relative to ring width
             const fontSizePx = Math.floor((TARGET_WORLD_HEIGHT * sizeMultiplier / width) * h);
 
-            const ringWidth = width;
-            const circumference = 2 * Math.PI * radius;
-            const aspect = circumference / ringWidth;
-            let w = h * aspect;
+            // Create a temporary canvas to measure text aspect ratio
+            const tempCanvas = document.createElement('canvas');
+            const tempCtx = tempCanvas.getContext('2d');
+            tempCtx.font = '700 ' + fontSizePx + 'px "Antonio", sans-serif';
+            const textMetrics = tempCtx.measureText(text);
+            const textWidth = textMetrics.width;
 
-            const maxW = 4096;
-            let scaleX = 1;
+            // Add some padding/spacing around the text
+            // FIX: Increase spacing significantly to prevent shadow/glow clipping at edges
+            // The shadowBlur is 0.4 * fontSizePx. We need at least that much on each side.
+            // Plus some extra for visual separation.
+            const minPadding = fontSizePx * 1.5;
+            const spacing = Math.max(textWidth * 0.5, minPadding);
+            const totalWidth = textWidth + spacing;
 
-            if (w > maxW) {
-                scaleX = maxW / w;
-                w = maxW;
-            }
+            // Calculate canvas width to maintain aspect ratio
+            const w = Math.ceil(totalWidth);
 
             const canvas = document.createElement('canvas');
-            canvas.width = Math.floor(w);
+            canvas.width = w;
             canvas.height = h;
             const ctx = canvas.getContext('2d');
 
@@ -1460,37 +1475,57 @@
                 ctx.shadowBlur = fontSizePx * 0.05;
             }
 
-            const textMetrics = ctx.measureText(text);
-            const textWidth = textMetrics.width;
-
-            const totalPhysicalWidth = w / scaleX;
-
-            // Apply Forced Repeats or default logic
-            let numRepeats;
-            if (forcedRepeats) {
-                numRepeats = forcedRepeats;
-            } else {
-                // Adjust factor slightly to increase spacing and prevent line break wrap artifacts
-                numRepeats = Math.max(1, Math.floor(totalPhysicalWidth / (textWidth * 1.75)));
+            // Draw text centered in the canvas
+            ctx.translate(w / 2, h / 2);
+            // No horizontal scaling needed as we are sizing canvas to text
+            if (glowColor && text !== "OUTWARD INFINITY") {
+                ctx.strokeText(text, 0, 0); // Stroke first for glow
             }
-
-            for (let i = 0; i < numRepeats; i++) {
-                const segW = w / numRepeats;
-                const x = (segW * i) + (segW / 2);
-
-                ctx.save();
-                ctx.translate(x, h / 2);
-                ctx.scale(scaleX * 0.8, 1.3); // Scale factor 0.8 to reduce horizontal stretch/overlap
-                if (glowColor && text !== "OUTWARD INFINITY") {
-                    ctx.strokeText(text, 0, 0); // Stroke first for glow
-                }
-                ctx.fillText(text, 0, 0);
-                ctx.restore();
-            }
+            ctx.fillText(text, 0, 0);
 
             const texture = new THREE.CanvasTexture(canvas);
             texture.anisotropy = 16;
             texture.needsUpdate = true;
+
+            // Use RepeatWrapping to repeat the text around the ring
+            texture.wrapS = THREE.RepeatWrapping;
+            texture.wrapT = THREE.ClampToEdgeWrapping;
+
+            // Calculate how many times to repeat based on physical circumference
+            const circumference = 2 * Math.PI * radius;
+
+            // Calculate physical width of the text on the ring
+            // We want the text to appear at its natural aspect ratio
+            // The texture maps 0..1 to circumference.
+            // Canvas aspect = w / h.
+            // Ring aspect = circumference / width.
+
+            // If we repeat 1 time, the canvas (w/h) is stretched to (circumference/width).
+            // We want the visual aspect ratio to match canvas aspect ratio.
+            // visual_w / visual_h = w / h
+            // visual_h = width (layer thickness)
+            // visual_w = width * (w / h)
+
+            // Total circumference / visual_w = number of repeats
+            // numRepeats = circumference / (width * (w / h))
+            //            = circumference * h / (width * w)
+
+            let numRepeats;
+            if (forcedRepeats) {
+                numRepeats = forcedRepeats;
+            } else {
+                // Use the calculated repeats to maintain aspect ratio
+                numRepeats = (circumference * h) / (width * w);
+
+                // Adjust for aesthetic spacing (reduce repeats slightly to add more space if needed)
+                // The 'spacing' added to 'totalWidth' already handles inter-text spacing.
+                // But we might want to ensure integer repeats for seamless wrapping?
+                // Actually, non-integer repeats are fine for RepeatWrapping, but might cause a seam.
+                // Let's round to nearest integer to avoid cut-off text at the seam.
+                numRepeats = Math.max(1, Math.round(numRepeats));
+            }
+
+            texture.repeat.set(numRepeats, 1);
 
             const geometry = new THREE.RingGeometry(radius - width / 2, radius + width / 2, 128, 1);
             const uvs = geometry.attributes.uv;
